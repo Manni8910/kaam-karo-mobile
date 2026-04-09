@@ -1,11 +1,11 @@
 {
   "expo": {
-    "name": "mobile",
+    "name": "KaaM",
     "slug": "mobile",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "mobile",
+    "scheme": "kaam",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
@@ -18,8 +18,8 @@
         "backgroundImage": "./assets/images/android-icon-background.png",
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
-      "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "package": "com.mannisingh.kaam"
     },
     "web": {
       "output": "static",
@@ -27,6 +27,16 @@
     },
     "plugins": [
       "expo-router",
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/images/icon.png",
+          "color": "#FF4F5A",
+          "sounds": [],
+          "androidMode": "default",
+          "androidCollapsedTitle": "#{unread_notifications} new notifications"
+        }
+      ],
       [
         "expo-splash-screen",
         {
@@ -43,6 +53,12 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "d5401a85-a7f5-4959-85a5-6def24a6478e"
+      }
     }
   }
 }
