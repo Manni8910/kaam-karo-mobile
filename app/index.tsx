@@ -9,6 +9,14 @@ import * as Location from 'expo-location';
 
 type Radius = 'city' | 'state' | 'all';
 
+const CATEGORIES = [
+  { key: 'ALL',        label: '🔥 All' },
+  { key: 'FULL_TIME',  label: '💼 Full Time' },
+  { key: 'PART_TIME',  label: '⏰ Part Time' },
+  { key: 'CONTRACT',   label: '📋 Contract' },
+  { key: 'INTERNSHIP', label: '🎓 Internship' },
+];
+
 const API_URL = 'https://kaam-backend-production.up.railway.app';
 const { width: SW } = Dimensions.get('window');
 
@@ -34,6 +42,10 @@ export default function HomeScreen() {
   const [filterCity, setFilterCity] = useState<string>('');
   const [filterState, setFilterState] = useState<string>('');
   const [showLocationModal, setShowLocationModal] = useState(false);
+  const [search, setSearch] = useState('');
+  const [category, setCategory] = useState('ALL');
+  const [searchActive, setSearchActive] = useState(false);
+  const searchTimer = useRef<any>(null);
   const pan = useRef(new Animated.ValueXY()).current;
   const matchScale = useRef(new Animated.Value(0)).current;
 
@@ -106,15 +118,19 @@ export default function HomeScreen() {
     return [...nearby, ...rest];
   };
 
-  const loadJobs = (overrideRadius?: Radius, overrideCity?: string, overrideState?: string) => {
+  const loadJobs = (overrideRadius?: Radius, overrideCity?: string, overrideState?: string, overrideSearch?: string, overrideCategory?: string) => {
     setLoadError(false);
     const r = overrideRadius ?? radius;
     const c = overrideCity ?? filterCity;
     const s = overrideState ?? filterState;
+    const q = overrideSearch ?? search;
+    const cat = overrideCategory ?? category;
 
     const params = new URLSearchParams({ radius: r });
     if (c) params.set('city', c);
     if (s) params.set('state', s);
+    if (q.trim()) params.set('search', q.trim());
+    if (cat !== 'ALL') params.set('category', cat);
 
     const controller = new AbortController();
     const abortTimer = setTimeout(() => controller.abort(), 5000);
@@ -246,6 +262,55 @@ export default function HomeScreen() {
           </TouchableOpacity>
         </View>
       </View>
+
+      {/* Search Bar */}
+      <View style={styles.searchRow}>
+        <View style={styles.searchBox}>
+          <Text style={styles.searchIcon}>🔍</Text>
+          <TextInput
+            style={styles.searchInput}
+            placeholder={t('Search jobs... e.g. Driver, Cook', 'नौकरी खोजें... जैसे ड्राइवर, कुक')}
+            placeholderTextColor="#bbb"
+            value={search}
+            onChangeText={v => {
+              setSearch(v);
+              clearTimeout(searchTimer.current);
+              searchTimer.current = setTimeout(() => {
+                setLoading(true);
+                loadJobs(undefined, undefined, undefined, v, undefined);
+              }, 500);
+            }}
+            returnKeyType="search"
+            onSubmitEditing={() => { setLoading(true); loadJobs(); }}
+          />
+          {search.length > 0 && (
+            <TouchableOpacity onPress={() => {
+              setSearch('');
+              setLoading(true);
+              loadJobs(undefined, undefined, undefined, '', undefined);
+            }}>
+              <Text style={{ fontSize: 16, color: '#bbb', paddingHorizontal: 8 }}>✕</Text>
+            </TouchableOpacity>
+          )}
+        </View>
+      </View>
+
+      {/* Category Filter */}
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.catBar} contentContainerStyle={styles.catBarContent}>
+        {CATEGORIES.map(cat => (
+          <TouchableOpacity
+            key={cat.key}
+            style={[styles.catChip, category === cat.key && styles.catChipActive]}
+            onPress={() => {
+              setCategory(cat.key);
+              setLoading(true);
+              loadJobs(undefined, undefined, undefined, undefined, cat.key);
+            }}
+          >
+            <Text style={[styles.catChipText, category === cat.key && styles.catChipTextActive]}>{cat.label}</Text>
+          </TouchableOpacity>
+        ))}
+      </ScrollView>
 
       {/* Location Filter Bar */}
       <View style={styles.filterBar}>
@@ -531,6 +596,18 @@ const styles = StyleSheet.create({
   headerRight: { flexDirection: 'row', gap: 8 },
   iconBtn: { width: 38, height: 38, borderRadius: 19, backgroundColor: '#fff', alignItems: 'center', justifyContent: 'center', shadowColor: '#000', shadowOpacity: 0.08, shadowRadius: 6, elevation: 3 },
   iconBtnText: { fontSize: 14, fontWeight: '700', color: '#1A1A1A' },
+
+  searchRow: { paddingHorizontal: 16, paddingVertical: 8, backgroundColor: '#F4F2EF' },
+  searchBox: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#fff', borderRadius: 14, paddingHorizontal: 12, paddingVertical: 10, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 6, elevation: 2 },
+  searchIcon: { fontSize: 15, marginRight: 8 },
+  searchInput: { flex: 1, fontSize: 14, color: '#1A1A1A', fontWeight: '500' },
+
+  catBar: { maxHeight: 42, backgroundColor: '#F4F2EF' },
+  catBarContent: { paddingHorizontal: 16, paddingVertical: 4, gap: 8, flexDirection: 'row' },
+  catChip: { paddingHorizontal: 14, paddingVertical: 6, borderRadius: 20, backgroundColor: '#fff', borderWidth: 1.5, borderColor: '#E8E5E2' },
+  catChipActive: { backgroundColor: '#1A1A1A', borderColor: '#1A1A1A' },
+  catChipText: { fontSize: 12, fontWeight: '700', color: '#888' },
+  catChipTextActive: { color: '#fff' },
 
   filterBar: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, paddingVertical: 6, backgroundColor: '#F4F2EF', gap: 6 },
   locationBtn: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#fff', borderRadius: 20, paddingHorizontal: 12, paddingVertical: 7, borderWidth: 1.5, borderColor: '#E8E5E2', gap: 4, maxWidth: 140 },

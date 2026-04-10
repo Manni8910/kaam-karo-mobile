@@ -175,7 +175,7 @@ export default function PostJobScreen() {
       const orderRes = await authFetch(`${API_URL}/api/payments/create-order`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ plan: duration }),
+        body: JSON.stringify({ plan: duration, testPayment: __DEV__ }),
       });
       const orderData = await orderRes.json();
       if (orderData.error) { Alert.alert('Error', orderData.error); return; }

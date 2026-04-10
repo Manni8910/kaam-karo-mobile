@@ -29,6 +29,23 @@ export default function ProfileScreen() {
   const [otpSent, setOtpSent] = useState(false);
   const [otp, setOtp] = useState('');
   const [otpLoading, setOtpLoading] = useState(false);
+  const [salaryMin, setSalaryMin] = useState('');
+  const [salaryMax, setSalaryMax] = useState('');
+  const [jobTypes, setJobTypes] = useState<string[]>([]);
+  const [userType, setUserType] = useState('SEEKER');
+
+  const JOB_TYPE_OPTS = [
+    { key: 'FULL_TIME', label: 'Full Time' },
+    { key: 'PART_TIME', label: 'Part Time' },
+    { key: 'CONTRACT', label: 'Contract' },
+    { key: 'INTERNSHIP', label: 'Internship' },
+  ];
+
+  const profileCompletion = () => {
+    const fields = [name, phone, skills, experience, (location as any)?.label, salaryMin, photoUri];
+    const filled = fields.filter(Boolean).length;
+    return Math.round((filled / fields.length) * 100);
+  };
 
   const t = (en: string, hi: string) => lang === 'hi' ? hi : en;
 
@@ -57,16 +74,18 @@ export default function ProfileScreen() {
       const res = await authFetch(`${API_URL}/api/profile`);
       const data = await res.json();
       setEmail(data.user?.email || '');
+      setUserType(data.user?.userType || 'SEEKER');
       const sp = data.user?.seekerProfile;
       if (sp) {
         setName([sp.firstName, sp.lastName].filter(Boolean).join(' '));
         setExperience(sp.bio || '');
         if (sp.locationName) setLocation({ label: sp.locationName });
         if (sp.skills?.length) setSkills(sp.skills.map((s: any) => s.name).join(', '));
-        // Profile exists → show view mode
+        if (sp.salaryMin) setSalaryMin(String(sp.salaryMin));
+        if (sp.salaryMax) setSalaryMax(String(sp.salaryMax));
+        if (sp.jobTypes?.length) setJobTypes(sp.jobTypes);
         setEditing(false);
       } else {
-        // No profile yet → show edit mode to fill in
         setEditing(true);
       }
       if (data.user?.phone) setPhone(data.user.phone);
@@ -178,6 +197,9 @@ export default function ProfileScreen() {
           locationName: (location as any)?.label || (location as any)?.state || (location as any)?.city || '',
           skills: skills.trim(),
           bio: experience.trim(),
+          salaryMin: salaryMin ? parseInt(salaryMin) : undefined,
+          salaryMax: salaryMax ? parseInt(salaryMax) : undefined,
+          jobTypes,
         }),
       });
       const data = await res.json();
@@ -232,6 +254,25 @@ export default function ProfileScreen() {
           {email ? <Text style={styles.avatarEmail}>{email}</Text> : null}
         </View>
       </View>
+
+      {/* Profile Completion Bar */}
+      {!editing && (() => {
+        const pct = profileCompletion();
+        return (
+          <View style={styles.completionCard}>
+            <View style={styles.completionRow}>
+              <Text style={styles.completionLabel}>Profile Strength</Text>
+              <Text style={[styles.completionPct, { color: pct >= 80 ? '#00B894' : pct >= 50 ? '#FFB800' : '#FF4F5A' }]}>{pct}%</Text>
+            </View>
+            <View style={styles.completionTrack}>
+              <View style={[styles.completionFill, { width: `${pct}%` as any, backgroundColor: pct >= 80 ? '#00B894' : pct >= 50 ? '#FFB800' : '#FF4F5A' }]} />
+            </View>
+            {pct < 100 && <Text style={styles.completionHint}>
+              {pct < 50 ? '⚡ Complete profile to get more matches!' : '👍 Almost there — add more details'}
+            </Text>}
+          </View>
+        );
+      })()}
 
       {/* Lang toggle + Dark mode toggle */}
       <View style={styles.langRow}>
@@ -293,12 +334,37 @@ export default function ProfileScreen() {
           <FormField label={t('Skills', 'कौशल')}>
             <TextInput style={styles.input} placeholder={t('e.g. Driving, Cooking, Sales', 'जैसे ड्राइविंग, खाना, सेल्स')} placeholderTextColor="#C0BDBA" value={skills} onChangeText={setSkills} />
           </FormField>
-          <FormField label={t('Experience', 'अनुभव')}>
+          <FormField label={t('Experience / About Me', 'अनुभव')}>
             <TextInput
               style={[styles.input, { height: 90, textAlignVertical: 'top', paddingTop: 14 }]}
               placeholder={t('Brief work history...', 'काम का संक्षिप्त विवरण...')}
               placeholderTextColor="#C0BDBA" value={experience} onChangeText={setExperience} multiline
             />
+          </FormField>
+
+          <FormField label={t('Expected Salary (per month ₹)', 'अपेक्षित वेतन')}>
+            <View style={{ flexDirection: 'row', gap: 10, alignItems: 'center' }}>
+              <TextInput style={[styles.input, { flex: 1 }]} placeholder="Min e.g. 12000" placeholderTextColor="#C0BDBA" value={salaryMin} onChangeText={setSalaryMin} keyboardType="numeric" />
+              <Text style={{ color: '#bbb', fontWeight: '700' }}>–</Text>
+              <TextInput style={[styles.input, { flex: 1 }]} placeholder="Max e.g. 25000" placeholderTextColor="#C0BDBA" value={salaryMax} onChangeText={setSalaryMax} keyboardType="numeric" />
+            </View>
+          </FormField>
+
+          <FormField label={t('I want to work...', 'मैं काम करना चाहता हूं')}>
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+              {JOB_TYPE_OPTS.map(opt => {
+                const active = jobTypes.includes(opt.key);
+                return (
+                  <TouchableOpacity
+                    key={opt.key}
+                    style={[styles.jobTypeChip, active && styles.jobTypeChipActive]}
+                    onPress={() => setJobTypes(prev => active ? prev.filter(k => k !== opt.key) : [...prev, opt.key])}
+                  >
+                    <Text style={[styles.jobTypeChipText, active && styles.jobTypeChipTextActive]}>{opt.label}</Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
           </FormField>
 
           <TouchableOpacity style={[styles.saveBtn, saving && { opacity: 0.65 }]} onPress={handleSave} disabled={saving}>
@@ -387,6 +453,21 @@ const styles = StyleSheet.create({
   viewCard: { backgroundColor: '#fff', marginHorizontal: 16, borderRadius: 20, padding: 20, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 10, elevation: 2, marginBottom: 12 },
   editBtn: { marginTop: 16, backgroundColor: '#F4F2EF', borderRadius: 14, padding: 16, alignItems: 'center' },
   editBtnText: { fontSize: 15, fontWeight: '800', color: '#FF4F5A' },
+
+  // Completion bar
+  completionCard: { marginHorizontal: 16, marginBottom: 12, backgroundColor: '#fff', borderRadius: 16, padding: 16, shadowColor: '#000', shadowOpacity: 0.04, shadowRadius: 8, elevation: 2 },
+  completionRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
+  completionLabel: { fontSize: 13, fontWeight: '700', color: '#888' },
+  completionPct: { fontSize: 18, fontWeight: '900' },
+  completionTrack: { height: 8, backgroundColor: '#F4F2EF', borderRadius: 4, overflow: 'hidden', marginBottom: 8 },
+  completionFill: { height: 8, borderRadius: 4 },
+  completionHint: { fontSize: 12, color: '#FF4F5A', fontWeight: '600' },
+
+  // Job type chips
+  jobTypeChip: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20, borderWidth: 1.5, borderColor: '#E8E5E2', backgroundColor: '#fff' },
+  jobTypeChipActive: { backgroundColor: '#FF4F5A', borderColor: '#FF4F5A' },
+  jobTypeChipText: { fontSize: 12, fontWeight: '700', color: '#888' },
+  jobTypeChipTextActive: { color: '#fff' },
 
   // Edit mode
   formCard: { backgroundColor: '#fff', marginHorizontal: 16, borderRadius: 20, padding: 20, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 10, elevation: 2, marginBottom: 12 },
