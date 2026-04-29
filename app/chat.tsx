@@ -1,10 +1,11 @@
 import { useState, useEffect, useRef } from 'react';
 import {
   View, Text, StyleSheet, TextInput, TouchableOpacity,
-  FlatList, KeyboardAvoidingView, Platform, ActivityIndicator, Modal, Alert
+  FlatList, KeyboardAvoidingView, Platform, ActivityIndicator, Modal, Alert, Linking
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as DocumentPicker from 'expo-document-picker';
 
 const API_URL = 'https://kaam-backend-production.up.railway.app';
 
@@ -26,6 +27,7 @@ export default function ChatScreen() {
   const [reportDesc, setReportDesc] = useState('');
   const [reportSubmitting, setReportSubmitting] = useState(false);
   const [reportDone, setReportDone] = useState(false);
+  const [uploadingResume, setUploadingResume] = useState(false);
 
   useEffect(() => { init(); }, []);
 
@@ -69,6 +71,50 @@ export default function ChatScreen() {
       if (data.message) setMessages(prev => prev.map(m => m.id === temp.id ? data.message : m));
     } catch {}
     finally { setSending(false); }
+  };
+
+  const sendResume = async () => {
+    try {
+      const result = await DocumentPicker.getDocumentAsync({
+        type: 'application/pdf',
+        copyToCacheDirectory: true,
+      });
+      if (result.canceled || !result.assets?.length) return;
+
+      const file = result.assets[0];
+      if (file.size && file.size > 5 * 1024 * 1024) {
+        Alert.alert('File too large', 'Please upload a PDF smaller than 5MB.');
+        return;
+      }
+
+      setUploadingResume(true);
+
+      const formData = new FormData();
+      formData.append('resume', {
+        uri: file.uri,
+        name: file.name || 'resume.pdf',
+        type: 'application/pdf',
+      } as any);
+
+      const res = await fetch(`${API_URL}/api/messages/${matchId}/resume`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+        body: formData,
+      });
+      const data = await res.json();
+      if (data.error) {
+        Alert.alert('Upload failed', data.error);
+        return;
+      }
+      if (data.message) {
+        setMessages(prev => [...prev, data.message]);
+        scrollToBottom();
+      }
+    } catch (e: any) {
+      Alert.alert('Error', 'Could not upload resume. Please try again.');
+    } finally {
+      setUploadingResume(false);
+    }
   };
 
   const scrollToBottom = () => setTimeout(() => flatListRef.current?.scrollToEnd({ animated: true }), 80);
@@ -161,12 +207,30 @@ export default function ChatScreen() {
             );
           }
           const isMe = item.senderId === userId || item.sender?.id === userId;
+          const isResume = item.type === 'RESUME';
           return (
             <View style={[styles.bubbleWrap, isMe ? styles.bubbleWrapMe : styles.bubbleWrapThem]}>
-              <View style={[styles.bubble, isMe ? styles.bubbleMe : styles.bubbleThem]}>
-                <Text style={isMe ? styles.bubbleMeText : styles.bubbleThemText}>{item.content}</Text>
-                <Text style={isMe ? styles.timeMе : styles.timeThem}>{fmtTime(item.createdAt)}</Text>
-              </View>
+              {isResume ? (
+                <TouchableOpacity
+                  style={[styles.resumeBubble, isMe ? styles.resumeBubbleMe : styles.resumeBubbleThem]}
+                  onPress={() => item.fileUrl && Linking.openURL(item.fileUrl)}
+                  activeOpacity={0.8}
+                >
+                  <Text style={styles.resumeIcon}>📄</Text>
+                  <View style={styles.resumeInfo}>
+                    <Text style={[styles.resumeName, isMe && styles.resumeNameMe]} numberOfLines={2}>
+                      {item.fileName || item.content || 'Resume.pdf'}
+                    </Text>
+                    <Text style={[styles.resumeTap, isMe && styles.resumeTapMe]}>Tap to open</Text>
+                  </View>
+                  <Text style={[styles.timeMе, !isMe && styles.timeThem]}>{fmtTime(item.createdAt)}</Text>
+                </TouchableOpacity>
+              ) : (
+                <View style={[styles.bubble, isMe ? styles.bubbleMe : styles.bubbleThem]}>
+                  <Text style={isMe ? styles.bubbleMeText : styles.bubbleThemText}>{item.content}</Text>
+                  <Text style={isMe ? styles.timeMе : styles.timeThem}>{fmtTime(item.createdAt)}</Text>
+                </View>
+              )}
             </View>
           );
         }}
@@ -174,6 +238,16 @@ export default function ChatScreen() {
 
       {/* Input */}
       <View style={styles.inputRow}>
+        <TouchableOpacity
+          style={styles.attachBtn}
+          onPress={sendResume}
+          disabled={uploadingResume}
+        >
+          {uploadingResume
+            ? <ActivityIndicator size="small" color="#FF4F5A" />
+            : <Text style={styles.attachIcon}>📎</Text>
+          }
+        </TouchableOpacity>
         <TextInput
           style={styles.input}
           placeholder="Message..."
@@ -290,6 +364,22 @@ const styles = StyleSheet.create({
   sendBtn: { width: 42, height: 42, borderRadius: 21, backgroundColor: '#FF4F5A', alignItems: 'center', justifyContent: 'center' },
   sendBtnDisabled: { backgroundColor: '#FFB8BB' },
   sendIcon: { color: '#fff', fontSize: 18, fontWeight: '800' },
+
+  attachBtn: { width: 42, height: 42, alignItems: 'center', justifyContent: 'center' },
+  attachIcon: { fontSize: 22 },
+
+  resumeBubble: {
+    flexDirection: 'row', alignItems: 'center', maxWidth: '78%',
+    borderRadius: 16, paddingHorizontal: 14, paddingVertical: 12, gap: 10,
+  },
+  resumeBubbleMe: { backgroundColor: '#FF4F5A', borderBottomRightRadius: 4 },
+  resumeBubbleThem: { backgroundColor: '#fff', borderBottomLeftRadius: 4, shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 4, elevation: 1 },
+  resumeIcon: { fontSize: 28 },
+  resumeInfo: { flex: 1 },
+  resumeName: { fontSize: 13, fontWeight: '700', color: '#1A1A1A', lineHeight: 18 },
+  resumeNameMe: { color: '#fff' },
+  resumeTap: { fontSize: 11, color: '#999', marginTop: 2 },
+  resumeTapMe: { color: 'rgba(255,255,255,0.7)' },
 
   reportBtn: { width: 36, height: 36, alignItems: 'center', justifyContent: 'center' },
   reportIcon: { fontSize: 20, color: '#FF4F5A' },
