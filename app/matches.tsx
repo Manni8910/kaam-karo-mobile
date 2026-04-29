@@ -43,7 +43,7 @@ export default function MatchesScreen() {
   };
 
   if (loading) return (
-    <View style={styles.center}><ActivityIndicator size="large" color="#FF4F5A" /></View>
+    <View style={styles.center}><ActivityIndicator size="large" color="#1B3FAB" /></View>
   );
 
   return (
@@ -69,7 +69,7 @@ export default function MatchesScreen() {
           data={matches}
           keyExtractor={(item) => item.id}
           contentContainerStyle={{ paddingBottom: 20 }}
-          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => fetchMatches(true)} tintColor="#FF4F5A" />}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => fetchMatches(true)} tintColor="#1B3FAB" />}
           renderItem={({ item }) => (
             <TouchableOpacity
               style={styles.card}
@@ -110,7 +110,7 @@ export default function MatchesScreen() {
 }
 
 function companyColor(name: string = '') {
-  const colors = ['#FF4F5A', '#6C5CE7', '#00B894', '#0984E3', '#E17055'];
+  const colors = ['#1B3FAB', '#6C5CE7', '#00B894', '#0984E3', '#E17055'];
   let h = 0;
   for (let i = 0; i < name.length; i++) h = name.charCodeAt(i) + ((h << 5) - h);
   return colors[Math.abs(h) % colors.length];
@@ -122,14 +122,14 @@ const styles = StyleSheet.create({
 
   header: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 20, paddingTop: 56, paddingBottom: 16, backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#F0F0F0' },
   headerTitle: { fontSize: 24, fontWeight: '900', color: '#1A1A1A' },
-  badge: { backgroundColor: '#FF4F5A', borderRadius: 12, paddingHorizontal: 8, paddingVertical: 3 },
+  badge: { backgroundColor: '#1B3FAB', borderRadius: 12, paddingHorizontal: 8, paddingVertical: 3 },
   badgeText: { color: '#fff', fontWeight: '800', fontSize: 12 },
 
   empty: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 40 },
   emptyEmoji: { fontSize: 64, marginBottom: 16 },
   emptyTitle: { fontSize: 22, fontWeight: '900', color: '#1A1A1A', marginBottom: 8 },
   emptySub: { fontSize: 14, color: '#999', textAlign: 'center', lineHeight: 22 },
-  swipeBtn: { marginTop: 24, backgroundColor: '#FF4F5A', paddingHorizontal: 28, paddingVertical: 14, borderRadius: 24 },
+  swipeBtn: { marginTop: 24, backgroundColor: '#1B3FAB', paddingHorizontal: 28, paddingVertical: 14, borderRadius: 24 },
   swipeBtnText: { color: '#fff', fontWeight: '800', fontSize: 15 },
 
   card: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#fff', marginHorizontal: 16, marginTop: 12, borderRadius: 18, padding: 14, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 8, elevation: 2 },
@@ -139,7 +139,7 @@ const styles = StyleSheet.create({
   infoTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 2 },
   company: { fontSize: 15, fontWeight: '800', color: '#1A1A1A', flex: 1 },
   time: { fontSize: 11, color: '#bbb', marginLeft: 8 },
-  jobTitle: { fontSize: 12, color: '#FF4F5A', fontWeight: '700', marginBottom: 3 },
+  jobTitle: { fontSize: 12, color: '#1B3FAB', fontWeight: '700', marginBottom: 3 },
   lastMsg: { fontSize: 13, color: '#999' },
   arrow: { paddingLeft: 8 },
   arrowText: { fontSize: 22, color: '#ddd', fontWeight: '300' },

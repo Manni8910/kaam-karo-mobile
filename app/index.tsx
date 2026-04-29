@@ -221,14 +221,14 @@ export default function HomeScreen() {
   if (checking) return (
     <View style={styles.splash}>
       <Text style={styles.splashLogo}>KaaM</Text>
-      <ActivityIndicator size="large" color="#FF4F5A" style={{ marginTop: 32 }} />
+      <ActivityIndicator size="large" color="#1B3FAB" style={{ marginTop: 32 }} />
     </View>
   );
 
   if (loading) return (
     <View style={styles.splash}>
       <Text style={styles.splashLogo}>KaaM</Text>
-      <ActivityIndicator size="large" color="#FF4F5A" style={{ marginTop: 32 }} />
+      <ActivityIndicator size="large" color="#1B3FAB" style={{ marginTop: 32 }} />
       <Text style={styles.splashSub}>{t('Finding jobs near you...', 'नौकरियां खोज रहे हैं...')}</Text>
     </View>
   );
@@ -575,7 +575,7 @@ export default function HomeScreen() {
 
 // Give each job a consistent color based on title
 function jobColor(title: string) {
-  const colors = ['#FF4F5A', '#6C5CE7', '#00B894', '#0984E3', '#E17055', '#6D4C41'];
+  const colors = ['#1B3FAB', '#6C5CE7', '#00B894', '#0984E3', '#E17055', '#6D4C41'];
   let hash = 0;
   for (let i = 0; i < (title || '').length; i++) hash = title.charCodeAt(i) + ((hash << 5) - hash);
   return colors[Math.abs(hash) % colors.length];
@@ -584,14 +584,14 @@ function jobColor(title: string) {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F4F2EF' },
   splash: { flex: 1, backgroundColor: '#F4F2EF', alignItems: 'center', justifyContent: 'center' },
-  splashLogo: { fontSize: 40, fontWeight: '900', color: '#FF4F5A' },
+  splashLogo: { fontSize: 40, fontWeight: '900', color: '#1B3FAB' },
   splashSub: { color: '#999', marginTop: 12, fontSize: 14 },
-  splashError: { color: '#FF4F5A', marginTop: 20, fontSize: 15, fontWeight: '600', textAlign: 'center', paddingHorizontal: 32 },
-  retryBtn: { marginTop: 20, backgroundColor: '#FF4F5A', paddingHorizontal: 32, paddingVertical: 14, borderRadius: 24 },
+  splashError: { color: '#1B3FAB', marginTop: 20, fontSize: 15, fontWeight: '600', textAlign: 'center', paddingHorizontal: 32 },
+  retryBtn: { marginTop: 20, backgroundColor: '#1B3FAB', paddingHorizontal: 32, paddingVertical: 14, borderRadius: 24 },
   retryText: { color: '#fff', fontWeight: '800', fontSize: 15 },
 
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, paddingTop: 52, paddingBottom: 8, backgroundColor: '#F4F2EF' },
-  logo: { fontSize: 26, fontWeight: '900', color: '#FF4F5A', letterSpacing: -0.5 },
+  logo: { fontSize: 26, fontWeight: '900', color: '#1B3FAB', letterSpacing: -0.5 },
   subtitle: { fontSize: 11, color: '#999', marginTop: 1 },
   headerRight: { flexDirection: 'row', gap: 8 },
   iconBtn: { width: 38, height: 38, borderRadius: 19, backgroundColor: '#fff', alignItems: 'center', justifyContent: 'center', shadowColor: '#000', shadowOpacity: 0.08, shadowRadius: 6, elevation: 3 },
@@ -611,14 +611,14 @@ const styles = StyleSheet.create({
 
   filterBar: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, paddingVertical: 6, backgroundColor: '#F4F2EF', gap: 6 },
   locationBtn: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#fff', borderRadius: 20, paddingHorizontal: 12, paddingVertical: 7, borderWidth: 1.5, borderColor: '#E8E5E2', gap: 4, maxWidth: 140 },
-  locationBtnActive: { borderColor: '#FF4F5A', backgroundColor: '#FFF5F5' },
+  locationBtnActive: { borderColor: '#1B3FAB', backgroundColor: '#FFF5F5' },
   locationBtnIcon: { fontSize: 13 },
   locationBtnText: { fontSize: 12, fontWeight: '700', color: '#888', flex: 1 },
-  locationBtnTextActive: { color: '#FF4F5A' },
-  locationBtnClose: { fontSize: 10, color: '#FF4F5A', fontWeight: '900', paddingHorizontal: 2 },
+  locationBtnTextActive: { color: '#1B3FAB' },
+  locationBtnClose: { fontSize: 10, color: '#1B3FAB', fontWeight: '900', paddingHorizontal: 2 },
   locationBtnChevron: { fontSize: 16, color: '#bbb', fontWeight: '700' },
   filterChip: { paddingHorizontal: 14, paddingVertical: 6, borderRadius: 20, backgroundColor: '#fff', borderWidth: 1.5, borderColor: '#E8E5E2' },
-  filterChipActive: { backgroundColor: '#FF4F5A', borderColor: '#FF4F5A' },
+  filterChipActive: { backgroundColor: '#1B3FAB', borderColor: '#1B3FAB' },
   filterChipText: { fontSize: 12, fontWeight: '700', color: '#888' },
   filterChipTextActive: { color: '#fff' },
 
@@ -632,12 +632,12 @@ const styles = StyleSheet.create({
   locInput: { backgroundColor: '#F4F2EF', borderRadius: 12, padding: 14, fontSize: 15, color: '#1A1A1A', marginBottom: 4 },
   radiusRow: { flexDirection: 'row', gap: 8, marginTop: 4 },
   radiusCard: { flex: 1, backgroundColor: '#F4F2EF', borderRadius: 16, padding: 12, alignItems: 'center', borderWidth: 2, borderColor: 'transparent' },
-  radiusCardActive: { borderColor: '#FF4F5A', backgroundColor: '#FFF5F5' },
+  radiusCardActive: { borderColor: '#1B3FAB', backgroundColor: '#FFF5F5' },
   radiusIcon: { fontSize: 24, marginBottom: 6 },
   radiusLabel: { fontSize: 12, fontWeight: '900', color: '#888', textAlign: 'center' },
-  radiusLabelActive: { color: '#FF4F5A' },
+  radiusLabelActive: { color: '#1B3FAB' },
   radiusSub: { fontSize: 10, color: '#bbb', textAlign: 'center', marginTop: 2 },
-  locApplyBtn: { backgroundColor: '#FF4F5A', borderRadius: 14, padding: 16, alignItems: 'center', marginTop: 20, shadowColor: '#FF4F5A', shadowOpacity: 0.3, shadowRadius: 8, elevation: 4 },
+  locApplyBtn: { backgroundColor: '#1B3FAB', borderRadius: 14, padding: 16, alignItems: 'center', marginTop: 20, shadowColor: '#1B3FAB', shadowOpacity: 0.3, shadowRadius: 8, elevation: 4 },
   locApplyText: { color: '#fff', fontWeight: '900', fontSize: 16 },
   locCancelBtn: { alignItems: 'center', paddingVertical: 14 },
   locCancelText: { color: '#999', fontWeight: '600', fontSize: 14 },
@@ -659,7 +659,7 @@ const styles = StyleSheet.create({
 
   stamp: { position: 'absolute', top: 24, zIndex: 10, paddingHorizontal: 16, paddingVertical: 8, borderRadius: 10, borderWidth: 3 },
   stampLike: { right: 20, borderColor: '#00B894', transform: [{ rotate: '15deg' }] },
-  stampSkip: { left: 20, borderColor: '#FF4F5A', transform: [{ rotate: '-15deg' }] },
+  stampSkip: { left: 20, borderColor: '#1B3FAB', transform: [{ rotate: '-15deg' }] },
   stampText: { fontSize: 18, fontWeight: '900', color: '#1A1A1A' },
 
   companyRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 18, gap: 12 },
@@ -691,7 +691,7 @@ const styles = StyleSheet.create({
   emptyCard: { backgroundColor: '#fff', borderRadius: 24, padding: 40, alignItems: 'center', width: '100%', shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 16, elevation: 4 },
   emptyTitle: { fontSize: 22, fontWeight: '900', color: '#1A1A1A', marginTop: 12 },
   emptySub: { fontSize: 14, color: '#999', textAlign: 'center', marginTop: 8, lineHeight: 20 },
-  reloadBtn: { marginTop: 20, backgroundColor: '#FF4F5A', paddingHorizontal: 28, paddingVertical: 12, borderRadius: 24 },
+  reloadBtn: { marginTop: 20, backgroundColor: '#1B3FAB', paddingHorizontal: 28, paddingVertical: 12, borderRadius: 24 },
   reloadText: { color: '#fff', fontWeight: '800', fontSize: 14 },
 
   actions: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 12, paddingVertical: 20, paddingBottom: 28 },
@@ -699,7 +699,7 @@ const styles = StyleSheet.create({
   undoBtn: { width: 44, height: 44, borderRadius: 22, backgroundColor: '#fff', borderWidth: 1.5, borderColor: '#E0E0E0' },
   undoIcon: { fontSize: 18, color: '#999' },
   skipBtn: { width: 62, height: 62, borderRadius: 31, backgroundColor: '#fff', borderWidth: 2, borderColor: '#FFD6D9' },
-  skipIcon: { fontSize: 26, color: '#FF4F5A' },
+  skipIcon: { fontSize: 26, color: '#1B3FAB' },
   applyBtn: { width: 76, height: 76, borderRadius: 38, backgroundColor: '#1A1A1A' },
   applyIcon: { fontSize: 32, color: '#fff' },
   superBtn: { width: 62, height: 62, borderRadius: 31, backgroundColor: '#fff', borderWidth: 2, borderColor: '#FFF0C0' },
@@ -710,7 +710,7 @@ const styles = StyleSheet.create({
   matchEmoji: { fontSize: 60, marginBottom: 12 },
   matchTitle: { fontSize: 28, fontWeight: '900', color: '#1A1A1A', marginBottom: 8 },
   matchSub: { fontSize: 14, color: '#666', textAlign: 'center' },
-  matchJob: { fontSize: 16, fontWeight: '800', color: '#FF4F5A', marginTop: 4, marginBottom: 24 },
+  matchJob: { fontSize: 16, fontWeight: '800', color: '#1B3FAB', marginTop: 4, marginBottom: 24 },
   matchChatBtn: { backgroundColor: '#1A1A1A', borderRadius: 16, paddingHorizontal: 32, paddingVertical: 16, width: '100%', alignItems: 'center', marginBottom: 12 },
   matchChatText: { color: '#fff', fontWeight: '800', fontSize: 16 },
   matchKeepBtn: { paddingVertical: 12 },

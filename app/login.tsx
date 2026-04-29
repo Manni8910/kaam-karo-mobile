@@ -114,10 +114,16 @@ export default function LoginScreen() {
     setLoading(true);
     try {
       const userType = await AsyncStorage.getItem('pendingUserType') || 'SEEKER';
+      const referral_source = await AsyncStorage.getItem('referral_source');
+      const referral_medium = await AsyncStorage.getItem('referral_medium');
+      const referral_campaign = await AsyncStorage.getItem('referral_campaign');
       const res = await fetch(`${API_URL}/api/auth/register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: email.trim(), password, phone, userType, name: name.trim() }),
+        body: JSON.stringify({
+          email: email.trim(), password, phone, userType, name: name.trim(),
+          ...(referral_source && { referral_source, referral_medium, referral_campaign }),
+        }),
       });
       const data = await res.json();
       if (data.error) { Alert.alert('', data.error); return; }
@@ -221,7 +227,7 @@ export default function LoginScreen() {
 
   return (
     <KeyboardAvoidingView style={styles.root} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
-      <StatusBar barStyle="light-content" backgroundColor="#FF4F5A" />
+      <StatusBar barStyle="light-content" backgroundColor="#1B3FAB" />
       <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
 
         {/* Brand header */}
@@ -509,7 +515,7 @@ export default function LoginScreen() {
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: '#FF4F5A' },
+  root: { flex: 1, backgroundColor: '#1B3FAB' },
   scroll: { flexGrow: 1 },
 
   brand: { alignItems: 'center', paddingTop: 56, paddingBottom: 28, paddingHorizontal: 24 },
@@ -523,7 +529,7 @@ const styles = StyleSheet.create({
 
   langRow: { flexDirection: 'row', gap: 8, marginBottom: 24, alignSelf: 'flex-end' },
   langChip: { paddingHorizontal: 14, paddingVertical: 6, borderRadius: 20, borderWidth: 1.5, borderColor: '#E8E5E2' },
-  langActive: { backgroundColor: '#FF4F5A', borderColor: '#FF4F5A' },
+  langActive: { backgroundColor: '#1B3FAB', borderColor: '#1B3FAB' },
   langText: { fontSize: 12, fontWeight: '700', color: '#999' },
   langActiveText: { color: '#fff' },
 
@@ -546,8 +552,8 @@ const styles = StyleSheet.create({
   eyeBtn: { paddingHorizontal: 14, justifyContent: 'center' },
 
   btn: {
-    backgroundColor: '#FF4F5A', borderRadius: 16, padding: 18, alignItems: 'center',
-    shadowColor: '#FF4F5A', shadowOpacity: 0.35, shadowRadius: 12, shadowOffset: { width: 0, height: 4 }, elevation: 6,
+    backgroundColor: '#1B3FAB', borderRadius: 16, padding: 18, alignItems: 'center',
+    shadowColor: '#1B3FAB', shadowOpacity: 0.35, shadowRadius: 12, shadowOffset: { width: 0, height: 4 }, elevation: 6,
     marginBottom: 16,
   },
   btnLoading: { opacity: 0.7 },
@@ -561,16 +567,16 @@ const styles = StyleSheet.create({
   emailLoginText: { fontWeight: '700', color: '#555', fontSize: 15 },
 
   backBtn: { marginBottom: 16 },
-  backText: { color: '#FF4F5A', fontWeight: '700', fontSize: 14 },
+  backText: { color: '#1B3FAB', fontWeight: '700', fontSize: 14 },
 
   resendBtn: { alignItems: 'center', marginTop: 4 },
-  resendText: { color: '#FF4F5A', fontWeight: '700', fontSize: 14 },
+  resendText: { color: '#1B3FAB', fontWeight: '700', fontSize: 14 },
 
   switchBtn: { alignItems: 'center', marginTop: 12 },
-  switchText: { color: '#FF4F5A', fontWeight: '700', fontSize: 14 },
+  switchText: { color: '#1B3FAB', fontWeight: '700', fontSize: 14 },
 
   forgotBtn: { alignSelf: 'flex-end', marginBottom: 16, marginTop: -8 },
-  forgotText: { color: '#FF4F5A', fontWeight: '600', fontSize: 13 },
+  forgotText: { color: '#1B3FAB', fontWeight: '600', fontSize: 13 },
 
   bottomNote: { fontSize: 11, color: 'rgba(255,255,255,0.6)', textAlign: 'center', padding: 20, backgroundColor: '#fff' },
 
@@ -579,9 +585,9 @@ const styles = StyleSheet.create({
     width: 22, height: 22, borderRadius: 6, borderWidth: 2, borderColor: '#E0DDD9',
     alignItems: 'center', justifyContent: 'center', marginTop: 1, flexShrink: 0,
   },
-  checkboxChecked: { backgroundColor: '#FF4F5A', borderColor: '#FF4F5A' },
+  checkboxChecked: { backgroundColor: '#1B3FAB', borderColor: '#1B3FAB' },
   checkmark: { color: '#fff', fontSize: 13, fontWeight: '900' },
   termsText: { fontSize: 13, color: '#888', flex: 1, lineHeight: 20 },
-  termsLink: { color: '#FF4F5A', fontWeight: '700', textDecorationLine: 'underline' },
+  termsLink: { color: '#1B3FAB', fontWeight: '700', textDecorationLine: 'underline' },
   btnDisabled: { opacity: 0.45 },
 });

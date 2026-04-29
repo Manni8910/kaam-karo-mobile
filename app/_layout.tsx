@@ -5,6 +5,7 @@ import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-cont
 import { LanguageProvider } from '../i18n/LanguageContext';
 import { ThemeProvider, useTheme } from '../theme/ThemeContext';
 import * as Notifications from 'expo-notifications';
+import * as Linking from 'expo-linking';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const API_URL = 'https://kaam-backend-production.up.railway.app';
@@ -55,7 +56,7 @@ async function registerForPushNotifications() {
         name: 'KaamKaro',
         importance: Notifications.AndroidImportance.MAX,
         vibrationPattern: [0, 250, 250, 250],
-        lightColor: '#FF4F5A',
+        lightColor: '#1B3FAB',
         sound: 'default',
       });
     }
@@ -71,6 +72,20 @@ function TabsLayout() {
   const responseListener = useRef<any>();
 
   useEffect(() => {
+    // Capture referral source from the URL the app was opened with
+    Linking.getInitialURL().then(url => {
+      if (!url) return;
+      const parsed = Linking.parse(url);
+      const source = parsed.queryParams?.utm_source as string | undefined;
+      const medium = parsed.queryParams?.utm_medium as string | undefined;
+      const campaign = parsed.queryParams?.utm_campaign as string | undefined;
+      if (source) {
+        AsyncStorage.setItem('referral_source', source);
+        if (medium) AsyncStorage.setItem('referral_medium', medium);
+        if (campaign) AsyncStorage.setItem('referral_campaign', campaign);
+      }
+    }).catch(() => {});
+
     // Register for push notifications
     registerForPushNotifications();
 
@@ -108,7 +123,7 @@ function TabsLayout() {
           paddingTop: 8,
           height: 60 + bottomPad,
         },
-        tabBarActiveTintColor: '#FF4F5A',
+        tabBarActiveTintColor: '#1B3FAB',
         tabBarInactiveTintColor: '#C0BDB8',
         tabBarLabelStyle: { fontSize: 10, fontWeight: '700', marginTop: 2 },
       }}
@@ -120,7 +135,7 @@ function TabsLayout() {
           tabBarIcon: ({ focused }) => (
             <View style={{
               width: 28, height: 28, borderRadius: 8,
-              backgroundColor: focused ? '#FF4F5A' : '#F0EDE8',
+              backgroundColor: focused ? '#1B3FAB' : '#F0EDE8',
               alignItems: 'center', justifyContent: 'center',
             }}>
               <Text style={{ fontSize: 15, color: focused ? '#fff' : '#C0BDB8' }}>F</Text>
@@ -135,7 +150,7 @@ function TabsLayout() {
           tabBarIcon: ({ focused }) => (
             <View style={{
               width: 28, height: 28, borderRadius: 8,
-              backgroundColor: focused ? '#FF4F5A' : '#F0EDE8',
+              backgroundColor: focused ? '#1B3FAB' : '#F0EDE8',
               alignItems: 'center', justifyContent: 'center',
             }}>
               <Text style={{ fontSize: 15, color: focused ? '#fff' : '#C0BDB8' }}>M</Text>
@@ -150,7 +165,7 @@ function TabsLayout() {
           tabBarIcon: ({ focused }) => (
             <View style={{
               width: 44, height: 44, borderRadius: 10,
-              backgroundColor: focused ? '#FF4F5A' : '#1A1A1A',
+              backgroundColor: focused ? '#1B3FAB' : '#1A1A1A',
               alignItems: 'center', justifyContent: 'center',
               marginTop: -10,
               shadowColor: '#000',

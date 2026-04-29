@@ -34,7 +34,7 @@ export default function WelcomeScreen() {
 
   return (
     <View style={styles.root}>
-      <StatusBar barStyle="light-content" backgroundColor="#FF4F5A" />
+      <StatusBar barStyle="light-content" backgroundColor="#1B3FAB" />
 
       {/* Hero */}
       <View style={styles.hero}>
@@ -137,10 +137,10 @@ function StatItem({ value, label }: { value: string; label: string }) {
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: '#FF4F5A' },
+  root: { flex: 1, backgroundColor: '#1B3FAB' },
 
   hero: {
-    backgroundColor: '#FF4F5A',
+    backgroundColor: '#1B3FAB',
     alignItems: 'center',
     paddingTop: 60,
     paddingBottom: 32,
@@ -180,29 +180,29 @@ const styles = StyleSheet.create({
     borderRadius: 20, padding: 20, borderWidth: 2, borderColor: '#F0EDE8',
     backgroundColor: '#FAFAFA', alignItems: 'center', position: 'relative',
   },
-  roleCardActive: { borderColor: '#FF4F5A', backgroundColor: '#FFF5F5' },
+  roleCardActive: { borderColor: '#1B3FAB', backgroundColor: '#FFF5F5' },
   roleEmoji: { fontSize: 40, marginBottom: 12 },
   roleTitle: { fontSize: 15, fontWeight: '900', color: '#1A1A1A', textAlign: 'center', lineHeight: 20, marginBottom: 6 },
-  roleTitleActive: { color: '#FF4F5A' },
+  roleTitleActive: { color: '#1B3FAB' },
   roleDesc: { fontSize: 11, color: '#bbb', textAlign: 'center', lineHeight: 16 },
   roleDescActive: { color: '#FF8A8A' },
   checkBadge: {
     position: 'absolute', top: 10, right: 10,
     width: 22, height: 22, borderRadius: 11,
-    backgroundColor: '#FF4F5A', alignItems: 'center', justifyContent: 'center',
+    backgroundColor: '#1B3FAB', alignItems: 'center', justifyContent: 'center',
   },
   checkText: { color: '#fff', fontSize: 12, fontWeight: '900' },
 
   continueBtn: {
-    backgroundColor: '#FF4F5A', borderRadius: 16, padding: 18,
+    backgroundColor: '#1B3FAB', borderRadius: 16, padding: 18,
     alignItems: 'center', marginBottom: 16,
-    shadowColor: '#FF4F5A', shadowOpacity: 0.3, shadowRadius: 12,
+    shadowColor: '#1B3FAB', shadowOpacity: 0.3, shadowRadius: 12,
     shadowOffset: { width: 0, height: 4 }, elevation: 6,
   },
-  continueBtnDisabled: { backgroundColor: '#FFB8BB', shadowOpacity: 0 },
+  continueBtnDisabled: { backgroundColor: '#7BA3E8', shadowOpacity: 0 },
   continueBtnText: { color: '#fff', fontWeight: '900', fontSize: 17 },
 
   loginLink: { textAlign: 'center', fontSize: 14, color: '#999', marginBottom: 16 },
-  loginLinkBold: { color: '#FF4F5A', fontWeight: '800' },
+  loginLinkBold: { color: '#1B3FAB', fontWeight: '800' },
   terms: { textAlign: 'center', fontSize: 11, color: '#bbb', lineHeight: 16 },
 });

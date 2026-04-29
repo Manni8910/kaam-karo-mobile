@@ -189,7 +189,7 @@ export default function PostJobScreen() {
       // Step 3: Paid — open Razorpay checkout in browser
       const checkoutUrl = `${API_URL}/api/payments/checkout?orderId=${orderData.orderId}&amount=${orderData.amount}&keyId=${orderData.keyId}&plan=${duration}&name=${encodeURIComponent(title)}`;
       const result = await WebBrowser.openBrowserAsync(checkoutUrl, {
-        toolbarColor: '#FF4F5A',
+        toolbarColor: '#1B3FAB',
         controlsColor: '#fff',
       });
 
@@ -215,7 +215,7 @@ export default function PostJobScreen() {
 
   if (loadingJobs) return (
     <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#F4F2EF' }}>
-      <ActivityIndicator size="large" color="#FF4F5A" />
+      <ActivityIndicator size="large" color="#1B3FAB" />
     </View>
   );
 
@@ -235,7 +235,7 @@ export default function PostJobScreen() {
         <View style={styles.statsCard}>
           <StatBox value={selectedJob.stats?.seen || 0} label="Seen" color="#6C5CE7" />
           <View style={styles.statDiv} />
-          <StatBox value={selectedJob.stats?.applied || 0} label="Applied" color="#FF4F5A" />
+          <StatBox value={selectedJob.stats?.applied || 0} label="Applied" color="#1B3FAB" />
           <View style={styles.statDiv} />
           <StatBox value={selectedJob.stats?.matched || 0} label="Matched" color="#00B894" />
         </View>
@@ -252,7 +252,7 @@ export default function PostJobScreen() {
 
         {loadingApplicants ? (
           <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-            <ActivityIndicator color="#FF4F5A" />
+            <ActivityIndicator color="#1B3FAB" />
           </View>
         ) : applicants.length === 0 ? (
           <View style={styles.emptyApplicants}>
@@ -483,7 +483,7 @@ export default function PostJobScreen() {
 
             <View style={styles.jobCardStats}>
               <MiniStat value={item.stats?.seen || 0} label="Seen" color="#6C5CE7" />
-              <MiniStat value={item.stats?.applied || 0} label="Applied" color="#FF4F5A" />
+              <MiniStat value={item.stats?.applied || 0} label="Applied" color="#1B3FAB" />
               <MiniStat value={item.stats?.matched || 0} label="Matched" color="#00B894" />
             </View>
 
@@ -522,9 +522,9 @@ const styles = StyleSheet.create({
 
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingTop: 52, paddingBottom: 14, backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#F0EDE8' },
   backBtn: { paddingVertical: 4, paddingHorizontal: 2 },
-  backText: { color: '#FF4F5A', fontSize: 15, fontWeight: '700' },
+  backText: { color: '#1B3FAB', fontSize: 15, fontWeight: '700' },
   headerTitle: { fontSize: 17, fontWeight: '900', color: '#1A1A1A', flex: 1, textAlign: 'center' },
-  newBtn: { backgroundColor: '#FF4F5A', paddingHorizontal: 14, paddingVertical: 7, borderRadius: 20 },
+  newBtn: { backgroundColor: '#1B3FAB', paddingHorizontal: 14, paddingVertical: 7, borderRadius: 20 },
   newBtnText: { color: '#fff', fontWeight: '800', fontSize: 13 },
 
   // Job list card
@@ -536,7 +536,7 @@ const styles = StyleSheet.create({
   jobCardMeta: { fontSize: 13, color: '#999', marginBottom: 2 },
   jobCardSalary: { fontSize: 14, fontWeight: '700', color: '#1A1A1A', marginBottom: 14 },
   jobCardStats: { flexDirection: 'row', borderTopWidth: 1, borderTopColor: '#F4F2EF', paddingTop: 12, marginBottom: 10 },
-  viewApplicants: { textAlign: 'center', fontSize: 13, fontWeight: '700', color: '#FF4F5A' },
+  viewApplicants: { textAlign: 'center', fontSize: 13, fontWeight: '700', color: '#1B3FAB' },
 
   // Stats card
   statsCard: { flexDirection: 'row', backgroundColor: '#fff', margin: 16, borderRadius: 18, padding: 20, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 8, elevation: 2 },
@@ -559,7 +559,7 @@ const styles = StyleSheet.create({
   matchedBadgeText: { fontSize: 10, fontWeight: '800', color: '#00B894' },
   superBadge: { backgroundColor: '#FFF8E0', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 8 },
   superBadgeText: { fontSize: 10, fontWeight: '800', color: '#FFB800' },
-  applicantPhone: { fontSize: 13, color: '#FF4F5A', fontWeight: '700', marginBottom: 3 },
+  applicantPhone: { fontSize: 13, color: '#1B3FAB', fontWeight: '700', marginBottom: 3 },
   applicantSkills: { fontSize: 12, color: '#6C5CE7', fontWeight: '600', marginBottom: 2 },
   applicantLocation: { fontSize: 12, color: '#999' },
   privacyNote: { fontSize: 11, color: '#bbb', fontStyle: 'italic', marginTop: 4 },
@@ -572,12 +572,12 @@ const styles = StyleSheet.create({
   multiline: { height: 100, textAlignVertical: 'top', paddingTop: 14 },
   typeRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   typeBtn: { paddingHorizontal: 16, paddingVertical: 9, borderRadius: 20, backgroundColor: '#fff', borderWidth: 1.5, borderColor: '#E8E5E2' },
-  typeBtnActive: { backgroundColor: '#FF4F5A', borderColor: '#FF4F5A' },
+  typeBtnActive: { backgroundColor: '#1B3FAB', borderColor: '#1B3FAB' },
   typeBtnText: { fontSize: 13, fontWeight: '700', color: '#888' },
   typeBtnTextActive: { color: '#fff' },
   salaryRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   dash: { color: '#bbb', fontWeight: '700', fontSize: 13 },
-  postBtn: { backgroundColor: '#FF4F5A', borderRadius: 14, padding: 18, alignItems: 'center', marginTop: 24, shadowColor: '#FF4F5A', shadowOpacity: 0.3, shadowRadius: 8, shadowOffset: { width: 0, height: 3 }, elevation: 5 },
+  postBtn: { backgroundColor: '#1B3FAB', borderRadius: 14, padding: 18, alignItems: 'center', marginTop: 24, shadowColor: '#1B3FAB', shadowOpacity: 0.3, shadowRadius: 8, shadowOffset: { width: 0, height: 3 }, elevation: 5 },
   postBtnText: { color: '#fff', fontWeight: '900', fontSize: 17 },
 
   emptyApplicants: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingTop: 60, paddingHorizontal: 32 },
@@ -586,7 +586,7 @@ const styles = StyleSheet.create({
   emptyApplicantsSub: { fontSize: 14, color: '#bbb', textAlign: 'center', lineHeight: 20 },
 
   // Company setup
-  companyHeader: { backgroundColor: '#FF4F5A', alignItems: 'center', paddingTop: 60, paddingBottom: 32, paddingHorizontal: 24 },
+  companyHeader: { backgroundColor: '#1B3FAB', alignItems: 'center', paddingTop: 60, paddingBottom: 32, paddingHorizontal: 24 },
   companyHeaderIcon: { width: 80, height: 80, borderRadius: 24, backgroundColor: 'rgba(255,255,255,0.25)', alignItems: 'center', justifyContent: 'center', marginBottom: 12, borderWidth: 3, borderColor: '#fff' },
   companyHeaderIconText: { fontSize: 34, fontWeight: '900', color: '#fff' },
   companyHeaderTitle: { fontSize: 22, fontWeight: '900', color: '#fff', marginBottom: 4 },
@@ -594,17 +594,17 @@ const styles = StyleSheet.create({
 
   // Company pill in header
   companyPill: { flexDirection: 'row', alignItems: 'center', gap: 6, flex: 1, marginRight: 10 },
-  companyPillAvatar: { width: 32, height: 32, borderRadius: 10, backgroundColor: '#FF4F5A', alignItems: 'center', justifyContent: 'center' },
+  companyPillAvatar: { width: 32, height: 32, borderRadius: 10, backgroundColor: '#1B3FAB', alignItems: 'center', justifyContent: 'center' },
   companyPillAvatarText: { color: '#fff', fontSize: 14, fontWeight: '900' },
   companyPillName: { fontSize: 15, fontWeight: '800', color: '#1A1A1A', flex: 1 },
-  companyPillEdit: { fontSize: 12, color: '#FF4F5A', fontWeight: '700' },
+  companyPillEdit: { fontSize: 12, color: '#1B3FAB', fontWeight: '700' },
 
   freeBanner: { backgroundColor: '#E8FFF4', borderRadius: 12, padding: 12, marginBottom: 12, alignItems: 'center' },
   freeBannerText: { color: '#00B894', fontWeight: '800', fontSize: 13 },
   durationBtn: { flex: 1, borderWidth: 1.5, borderColor: '#E8E5E2', borderRadius: 14, padding: 12, alignItems: 'center', backgroundColor: '#fff' },
-  durationBtnActive: { borderColor: '#FF4F5A', backgroundColor: '#FFF5F5' },
+  durationBtnActive: { borderColor: '#1B3FAB', backgroundColor: '#FFF5F5' },
   durationLabel: { fontSize: 13, fontWeight: '800', color: '#888' },
-  durationLabelActive: { color: '#FF4F5A' },
+  durationLabelActive: { color: '#1B3FAB' },
   durationPrice: { fontSize: 16, fontWeight: '900', color: '#1A1A1A', marginTop: 4 },
-  durationPriceActive: { color: '#FF4F5A' },
+  durationPriceActive: { color: '#1B3FAB' },
 });

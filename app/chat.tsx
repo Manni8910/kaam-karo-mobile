@@ -104,7 +104,7 @@ export default function ChatScreen() {
           const result = await DocumentPicker.getDocumentAsync({ type: 'application/pdf', copyToCacheDirectory: true });
           if (result.canceled || !result.assets?.length) return;
           const file = result.assets[0];
-          if (file.size && file.size > 5 * 1024 * 1024) { Alert.alert('File too large', 'Max 5MB allowed.'); return; }
+          if (file.size && file.size > 2 * 1024 * 1024) { Alert.alert('File too large', 'Max 2MB allowed.'); return; }
           await uploadFileToChat(file.uri, file.name || 'resume.pdf', 'application/pdf');
         },
       },
@@ -162,7 +162,7 @@ export default function ChatScreen() {
 
   if (loading) return (
     <View style={[styles.container, { alignItems: 'center', justifyContent: 'center' }]}>
-      <ActivityIndicator size="large" color="#FF4F5A" />
+      <ActivityIndicator size="large" color="#1B3FAB" />
     </View>
   );
 
@@ -260,7 +260,7 @@ export default function ChatScreen() {
           disabled={uploadingResume}
         >
           {uploadingResume
-            ? <ActivityIndicator size="small" color="#FF4F5A" />
+            ? <ActivityIndicator size="small" color="#1B3FAB" />
             : <Text style={styles.attachIcon}>📎</Text>
           }
         </TouchableOpacity>
@@ -334,7 +334,7 @@ export default function ChatScreen() {
 }
 
 function nameColor(name: string = '') {
-  const colors = ['#FF4F5A', '#6C5CE7', '#00B894', '#0984E3', '#E17055'];
+  const colors = ['#1B3FAB', '#6C5CE7', '#00B894', '#0984E3', '#E17055'];
   let h = 0;
   for (let i = 0; i < name.length; i++) h = name.charCodeAt(i) + ((h << 5) - h);
   return colors[Math.abs(h) % colors.length];
@@ -345,7 +345,7 @@ const styles = StyleSheet.create({
 
   header: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#fff', paddingHorizontal: 12, paddingTop: 50, paddingBottom: 12, borderBottomWidth: 1, borderBottomColor: '#F0F0F0', gap: 10 },
   backBtn: { width: 36, height: 36, alignItems: 'center', justifyContent: 'center' },
-  backIcon: { fontSize: 22, color: '#FF4F5A', fontWeight: '700' },
+  backIcon: { fontSize: 22, color: '#1B3FAB', fontWeight: '700' },
   headerAvatar: { width: 44, height: 44, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
   headerAvatarText: { color: '#fff', fontSize: 18, fontWeight: '900' },
   headerInfo: { flex: 1 },
@@ -363,7 +363,7 @@ const styles = StyleSheet.create({
   bubbleWrapThem: { alignItems: 'flex-start' },
 
   bubble: { maxWidth: '78%', borderRadius: 18, paddingHorizontal: 14, paddingVertical: 10 },
-  bubbleMe: { backgroundColor: '#FF4F5A', borderBottomRightRadius: 4 },
+  bubbleMe: { backgroundColor: '#1B3FAB', borderBottomRightRadius: 4 },
   bubbleThem: { backgroundColor: '#fff', borderBottomLeftRadius: 4, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 4, elevation: 1 },
 
   bubbleMeText: { color: '#fff', fontSize: 15, lineHeight: 21 },
@@ -377,8 +377,8 @@ const styles = StyleSheet.create({
 
   inputRow: { flexDirection: 'row', alignItems: 'flex-end', backgroundColor: '#fff', paddingHorizontal: 12, paddingVertical: 10, paddingBottom: Platform.OS === 'ios' ? 28 : 10, borderTopWidth: 1, borderTopColor: '#F0F0F0', gap: 8 },
   input: { flex: 1, backgroundColor: '#F4F2EF', borderRadius: 22, paddingHorizontal: 16, paddingVertical: 10, fontSize: 15, color: '#1A1A1A', maxHeight: 110, minHeight: 42 },
-  sendBtn: { width: 42, height: 42, borderRadius: 21, backgroundColor: '#FF4F5A', alignItems: 'center', justifyContent: 'center' },
-  sendBtnDisabled: { backgroundColor: '#FFB8BB' },
+  sendBtn: { width: 42, height: 42, borderRadius: 21, backgroundColor: '#1B3FAB', alignItems: 'center', justifyContent: 'center' },
+  sendBtnDisabled: { backgroundColor: '#7BA3E8' },
   sendIcon: { color: '#fff', fontSize: 18, fontWeight: '800' },
 
   attachBtn: { width: 42, height: 42, alignItems: 'center', justifyContent: 'center' },
@@ -393,7 +393,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row', alignItems: 'center', maxWidth: '78%',
     borderRadius: 16, paddingHorizontal: 14, paddingVertical: 12, gap: 10,
   },
-  resumeBubbleMe: { backgroundColor: '#FF4F5A', borderBottomRightRadius: 4 },
+  resumeBubbleMe: { backgroundColor: '#1B3FAB', borderBottomRightRadius: 4 },
   resumeBubbleThem: { backgroundColor: '#fff', borderBottomLeftRadius: 4, shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 4, elevation: 1 },
   resumeIcon: { fontSize: 28 },
   resumeInfo: { flex: 1 },
@@ -403,20 +403,20 @@ const styles = StyleSheet.create({
   resumeTapMe: { color: 'rgba(255,255,255,0.7)' },
 
   reportBtn: { width: 36, height: 36, alignItems: 'center', justifyContent: 'center' },
-  reportIcon: { fontSize: 20, color: '#FF4F5A' },
+  reportIcon: { fontSize: 20, color: '#1B3FAB' },
   reportOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
   reportCard: { backgroundColor: '#fff', borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24, paddingBottom: 40 },
   reportTitle: { fontSize: 20, fontWeight: '900', color: '#1A1A1A', marginBottom: 6 },
   reportSub: { fontSize: 14, color: '#888', marginBottom: 16 },
   reportOption: { borderWidth: 1.5, borderColor: '#E8E5E2', borderRadius: 12, padding: 14, marginBottom: 8 },
-  reportOptionActive: { borderColor: '#FF4F5A', backgroundColor: '#FFF0F0' },
+  reportOptionActive: { borderColor: '#1B3FAB', backgroundColor: '#EEF2FF' },
   reportOptionTxt: { fontSize: 14, color: '#555', fontWeight: '600' },
-  reportOptionTxtActive: { color: '#FF4F5A', fontWeight: '700' },
+  reportOptionTxtActive: { color: '#1B3FAB', fontWeight: '700' },
   reportInput: { borderWidth: 1.5, borderColor: '#E8E5E2', borderRadius: 12, padding: 14, fontSize: 14, color: '#1A1A1A', height: 80, textAlignVertical: 'top', marginTop: 8, marginBottom: 16 },
   reportBtns: { flexDirection: 'row', gap: 12 },
   reportCancelBtn: { flex: 1, padding: 14, borderRadius: 12, borderWidth: 1.5, borderColor: '#E8E5E2', alignItems: 'center' },
   reportCancelTxt: { fontWeight: '700', color: '#888' },
-  reportSubmitBtn: { flex: 1, padding: 14, borderRadius: 12, backgroundColor: '#FF4F5A', alignItems: 'center' },
+  reportSubmitBtn: { flex: 1, padding: 14, borderRadius: 12, backgroundColor: '#1B3FAB', alignItems: 'center' },
   reportSubmitTxt: { fontWeight: '800', color: '#fff' },
   reportCloseBtn: { marginTop: 16, backgroundColor: '#F0EDE8', borderRadius: 12, padding: 16, alignItems: 'center' },
   reportCloseTxt: { fontWeight: '800', color: '#1A1A1A' },

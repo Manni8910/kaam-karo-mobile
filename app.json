@@ -31,7 +31,7 @@
         "expo-notifications",
         {
           "icon": "./assets/images/icon.png",
-          "color": "#FF4F5A",
+          "color": "#1B3FAB",
           "sounds": [],
           "androidMode": "default",
           "androidCollapsedTitle": "#{unread_notifications} new notifications"

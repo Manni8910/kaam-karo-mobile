@@ -223,7 +223,7 @@ export default function ProfileScreen() {
 
   if (loading) return (
     <View style={{ flex: 1, backgroundColor: '#F4F2EF', alignItems: 'center', justifyContent: 'center' }}>
-      <ActivityIndicator size="large" color="#FF4F5A" />
+      <ActivityIndicator size="large" color="#1B3FAB" />
     </View>
   );
 
@@ -262,10 +262,10 @@ export default function ProfileScreen() {
           <View style={styles.completionCard}>
             <View style={styles.completionRow}>
               <Text style={styles.completionLabel}>Profile Strength</Text>
-              <Text style={[styles.completionPct, { color: pct >= 80 ? '#00B894' : pct >= 50 ? '#FFB800' : '#FF4F5A' }]}>{pct}%</Text>
+              <Text style={[styles.completionPct, { color: pct >= 80 ? '#00B894' : pct >= 50 ? '#FFB800' : '#1B3FAB' }]}>{pct}%</Text>
             </View>
             <View style={styles.completionTrack}>
-              <View style={[styles.completionFill, { width: `${pct}%` as any, backgroundColor: pct >= 80 ? '#00B894' : pct >= 50 ? '#FFB800' : '#FF4F5A' }]} />
+              <View style={[styles.completionFill, { width: `${pct}%` as any, backgroundColor: pct >= 80 ? '#00B894' : pct >= 50 ? '#FFB800' : '#1B3FAB' }]} />
             </View>
             {pct < 100 && <Text style={styles.completionHint}>
               {pct < 50 ? '⚡ Complete profile to get more matches!' : '👍 Almost there — add more details'}
@@ -426,7 +426,7 @@ function FormField({ label, children }: { label: string; children: React.ReactNo
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F4F2EF' },
 
-  headerBg: { backgroundColor: '#FF4F5A', paddingBottom: 28 },
+  headerBg: { backgroundColor: '#1B3FAB', paddingBottom: 28 },
   headerTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingTop: 52, paddingBottom: 16 },
   backBtn: { width: 38, height: 38, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,255,255,0.2)', borderRadius: 12 },
   backText: { fontSize: 20, color: '#fff', fontWeight: '700' },
@@ -444,7 +444,7 @@ const styles = StyleSheet.create({
 
   langRow: { flexDirection: 'row', gap: 8, justifyContent: 'center', backgroundColor: '#fff', paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: '#F0EDE8', marginBottom: 12, flexWrap: 'wrap' },
   langBtn: { paddingHorizontal: 20, paddingVertical: 7, borderRadius: 20, borderWidth: 1.5, borderColor: '#E8E5E2' },
-  langActive: { backgroundColor: '#FF4F5A', borderColor: '#FF4F5A' },
+  langActive: { backgroundColor: '#1B3FAB', borderColor: '#1B3FAB' },
   langText: { fontSize: 13, fontWeight: '700', color: '#999' },
   langTextActive: { color: '#fff' },
   darkToggleBtn: { borderColor: '#1A1A1A' },
@@ -452,7 +452,7 @@ const styles = StyleSheet.create({
   // View mode
   viewCard: { backgroundColor: '#fff', marginHorizontal: 16, borderRadius: 20, padding: 20, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 10, elevation: 2, marginBottom: 12 },
   editBtn: { marginTop: 16, backgroundColor: '#F4F2EF', borderRadius: 14, padding: 16, alignItems: 'center' },
-  editBtnText: { fontSize: 15, fontWeight: '800', color: '#FF4F5A' },
+  editBtnText: { fontSize: 15, fontWeight: '800', color: '#1B3FAB' },
 
   // Completion bar
   completionCard: { marginHorizontal: 16, marginBottom: 12, backgroundColor: '#fff', borderRadius: 16, padding: 16, shadowColor: '#000', shadowOpacity: 0.04, shadowRadius: 8, elevation: 2 },
@@ -461,24 +461,24 @@ const styles = StyleSheet.create({
   completionPct: { fontSize: 18, fontWeight: '900' },
   completionTrack: { height: 8, backgroundColor: '#F4F2EF', borderRadius: 4, overflow: 'hidden', marginBottom: 8 },
   completionFill: { height: 8, borderRadius: 4 },
-  completionHint: { fontSize: 12, color: '#FF4F5A', fontWeight: '600' },
+  completionHint: { fontSize: 12, color: '#1B3FAB', fontWeight: '600' },
 
   // Job type chips
   jobTypeChip: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20, borderWidth: 1.5, borderColor: '#E8E5E2', backgroundColor: '#fff' },
-  jobTypeChipActive: { backgroundColor: '#FF4F5A', borderColor: '#FF4F5A' },
+  jobTypeChipActive: { backgroundColor: '#1B3FAB', borderColor: '#1B3FAB' },
   jobTypeChipText: { fontSize: 12, fontWeight: '700', color: '#888' },
   jobTypeChipTextActive: { color: '#fff' },
 
   // Edit mode
   formCard: { backgroundColor: '#fff', marginHorizontal: 16, borderRadius: 20, padding: 20, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 10, elevation: 2, marginBottom: 12 },
   input: { backgroundColor: '#F8F6F3', borderRadius: 12, padding: 14, fontSize: 15, color: '#1A1A1A' },
-  saveBtn: { backgroundColor: '#FF4F5A', borderRadius: 14, padding: 17, alignItems: 'center', marginTop: 8, shadowColor: '#FF4F5A', shadowOpacity: 0.3, shadowRadius: 8, shadowOffset: { width: 0, height: 3 }, elevation: 5 },
+  saveBtn: { backgroundColor: '#1B3FAB', borderRadius: 14, padding: 17, alignItems: 'center', marginTop: 8, shadowColor: '#1B3FAB', shadowOpacity: 0.3, shadowRadius: 8, shadowOffset: { width: 0, height: 3 }, elevation: 5 },
   saveBtnText: { color: '#fff', fontWeight: '900', fontSize: 16 },
   cancelBtn: { padding: 14, alignItems: 'center' },
   cancelText: { color: '#bbb', fontWeight: '700', fontSize: 14 },
 
   version: { textAlign: 'center', fontSize: 11, color: '#C0BDBA', paddingVertical: 24 },
-  otpBtn: { backgroundColor: '#FF4F5A', borderRadius: 12, paddingHorizontal: 14, justifyContent: 'center', alignItems: 'center', minWidth: 90 },
+  otpBtn: { backgroundColor: '#1B3FAB', borderRadius: 12, paddingHorizontal: 14, justifyContent: 'center', alignItems: 'center', minWidth: 90 },
   otpBtnText: { color: '#fff', fontWeight: '800', fontSize: 13 },
   verifiedBadge: { backgroundColor: '#E8FFF4', borderRadius: 12, paddingHorizontal: 14, justifyContent: 'center', alignItems: 'center' },
   verifiedText: { color: '#00B894', fontWeight: '800', fontSize: 13 },
