@@ -6,6 +6,8 @@ import {
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as DocumentPicker from 'expo-document-picker';
+import * as ImagePicker from 'expo-image-picker';
+import { Image } from 'react-native';
 
 const API_URL = 'https://kaam-backend-production.up.railway.app';
 
@@ -73,48 +75,54 @@ export default function ChatScreen() {
     finally { setSending(false); }
   };
 
-  const sendResume = async () => {
+  const uploadFileToChat = async (uri: string, name: string, type: string) => {
+    setUploadingResume(true);
     try {
-      const result = await DocumentPicker.getDocumentAsync({
-        type: 'application/pdf',
-        copyToCacheDirectory: true,
-      });
-      if (result.canceled || !result.assets?.length) return;
-
-      const file = result.assets[0];
-      if (file.size && file.size > 5 * 1024 * 1024) {
-        Alert.alert('File too large', 'Please upload a PDF smaller than 5MB.');
-        return;
-      }
-
-      setUploadingResume(true);
-
       const formData = new FormData();
-      formData.append('resume', {
-        uri: file.uri,
-        name: file.name || 'resume.pdf',
-        type: 'application/pdf',
-      } as any);
+      formData.append('file', { uri, name, type } as any);
 
-      const res = await fetch(`${API_URL}/api/messages/${matchId}/resume`, {
+      const res = await fetch(`${API_URL}/api/messages/${matchId}/file`, {
         method: 'POST',
         headers: { Authorization: `Bearer ${token}` },
         body: formData,
       });
       const data = await res.json();
-      if (data.error) {
-        Alert.alert('Upload failed', data.error);
-        return;
-      }
-      if (data.message) {
-        setMessages(prev => [...prev, data.message]);
-        scrollToBottom();
-      }
-    } catch (e: any) {
-      Alert.alert('Error', 'Could not upload resume. Please try again.');
+      if (data.error) { Alert.alert('Upload failed', data.error); return; }
+      if (data.message) { setMessages(prev => [...prev, data.message]); scrollToBottom(); }
+    } catch {
+      Alert.alert('Error', 'Could not upload file. Please try again.');
     } finally {
       setUploadingResume(false);
     }
+  };
+
+  const sendResume = async () => {
+    Alert.alert('Send File', 'What would you like to send?', [
+      {
+        text: '📄 Resume (PDF)',
+        onPress: async () => {
+          const result = await DocumentPicker.getDocumentAsync({ type: 'application/pdf', copyToCacheDirectory: true });
+          if (result.canceled || !result.assets?.length) return;
+          const file = result.assets[0];
+          if (file.size && file.size > 5 * 1024 * 1024) { Alert.alert('File too large', 'Max 5MB allowed.'); return; }
+          await uploadFileToChat(file.uri, file.name || 'resume.pdf', 'application/pdf');
+        },
+      },
+      {
+        text: '📷 Image / Screenshot',
+        onPress: async () => {
+          const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
+          if (!perm.granted) { Alert.alert('Permission needed', 'Allow photo access to send images.'); return; }
+          const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ImagePicker.MediaTypeOptions.Images, quality: 0.8, allowsEditing: false });
+          if (result.canceled || !result.assets?.length) return;
+          const asset = result.assets[0];
+          const ext = asset.uri.split('.').pop() || 'jpg';
+          const mime = ext === 'png' ? 'image/png' : 'image/jpeg';
+          await uploadFileToChat(asset.uri, `image_${Date.now()}.${ext}`, mime);
+        },
+      },
+      { text: 'Cancel', style: 'cancel' },
+    ]);
   };
 
   const scrollToBottom = () => setTimeout(() => flatListRef.current?.scrollToEnd({ animated: true }), 80);
@@ -208,9 +216,17 @@ export default function ChatScreen() {
           }
           const isMe = item.senderId === userId || item.sender?.id === userId;
           const isResume = item.type === 'RESUME';
+          const isImage = item.type === 'IMAGE';
           return (
             <View style={[styles.bubbleWrap, isMe ? styles.bubbleWrapMe : styles.bubbleWrapThem]}>
-              {isResume ? (
+              {isImage ? (
+                <TouchableOpacity onPress={() => item.fileUrl && Linking.openURL(item.fileUrl)} activeOpacity={0.9}>
+                  <View style={[styles.imageBubble, isMe ? styles.imageBubbleMe : styles.imageBubbleThem]}>
+                    <Image source={{ uri: item.fileUrl }} style={styles.chatImage} resizeMode="cover" />
+                    <Text style={[styles.timeMе, !isMe && styles.timeThem, { marginTop: 4, marginRight: 4 }]}>{fmtTime(item.createdAt)}</Text>
+                  </View>
+                </TouchableOpacity>
+              ) : isResume ? (
                 <TouchableOpacity
                   style={[styles.resumeBubble, isMe ? styles.resumeBubbleMe : styles.resumeBubbleThem]}
                   onPress={() => item.fileUrl && Linking.openURL(item.fileUrl)}
@@ -367,6 +383,11 @@ const styles = StyleSheet.create({
 
   attachBtn: { width: 42, height: 42, alignItems: 'center', justifyContent: 'center' },
   attachIcon: { fontSize: 22 },
+
+  imageBubble: { borderRadius: 16, overflow: 'hidden', maxWidth: 240 },
+  imageBubbleMe: { borderBottomRightRadius: 4 },
+  imageBubbleThem: { borderBottomLeftRadius: 4 },
+  chatImage: { width: 220, height: 160, borderRadius: 14 },
 
   resumeBubble: {
     flexDirection: 'row', alignItems: 'center', maxWidth: '78%',
