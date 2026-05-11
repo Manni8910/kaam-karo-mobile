@@ -2,17 +2,23 @@ import { useState, useRef, useEffect } from 'react';
 import {
   View, Text, StyleSheet, TextInput, TouchableOpacity,
   ActivityIndicator, KeyboardAvoidingView, Platform, StatusBar,
+  Image, ScrollView, Linking,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const GREEN      = '#1E8A3C';
-const GREEN_DARK = '#166830';
-const RED        = '#EF4444';
-const API_URL    = 'https://kaam-backend-production.up.railway.app';
+const INK    = '#06142f';
+const GREEN  = '#08a63f';
+const GREEN_DARK = '#057a31';
+const BLUE   = '#1457c8';
+const MUTED  = '#667085';
+const BG     = '#f8fbff';
+const BORDER = '#e2e8f0';
+const RED    = '#e5484d';
 
-type Step = 'phone' | 'otp';
+const API_URL = 'https://kaam-backend-production.up.railway.app';
+type Step = 'phone' | 'otpCode';
 
 export default function LoginScreen() {
   const router = useRouter();
@@ -65,21 +71,20 @@ export default function LoginScreen() {
       try { data = await res.json(); } catch {}
       if (!res.ok) { setError(data.error || 'Could not send OTP'); return; }
       if (data.devCode) setError(`DEV OTP: ${data.devCode}`);
-      setOtp(''); setStep('otp'); startTimer(25);
+      setOtp(''); setStep('otpCode'); startTimer(25);
       setTimeout(() => otpRef.current?.focus(), 300);
     } catch (e: any) {
       setError(`Network error: ${e?.message || 'Check connection'}`);
     } finally { setLoading(false); }
   };
 
-  const verifyOtp = async (code?: string) => {
-    const c = code ?? otp;
-    if (c.length !== 6) { setError('Enter the 6-digit code'); return; }
+  const verifyOtp = async () => {
+    if (otp.length !== 6) { setError('Enter the 6-digit code'); return; }
     setError(''); setLoading(true);
     try {
       const res  = await fetch(`${API_URL}/api/auth/login-otp`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phone: phone.trim(), code: c }),
+        body: JSON.stringify({ phone: phone.trim(), code: otp }),
       });
       let data: any = {};
       try { data = await res.json(); } catch {}
@@ -101,33 +106,54 @@ export default function LoginScreen() {
   const handleOtpChange = (val: string) => {
     const digits = val.replace(/\D/g, '').slice(0, 6);
     setOtp(digits);
-    if (digits.length === 6) setTimeout(() => verifyOtp(digits), 150);
+    if (digits.length === 6) {
+      // Auto-submit after brief delay
+      setTimeout(async () => {
+        if (digits.length !== 6) return;
+        setError(''); setLoading(true);
+        try {
+          const res = await fetch(`${API_URL}/api/auth/login-otp`, {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ phone: phone.trim(), code: digits }),
+          });
+          let d: any = {};
+          try { d = await res.json(); } catch {}
+          if (!res.ok || d.error) { setError(d.error || 'Incorrect OTP'); return; }
+          await finishLogin(d);
+        } catch (e: any) {
+          setError(`Network error: ${e?.message}`);
+        } finally { setLoading(false); }
+      }, 150);
+    }
   };
 
   return (
     <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
-      <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
+      <StatusBar barStyle="dark-content" backgroundColor={BG} translucent={false} />
 
-      <LinearGradient
-        colors={['#1B3FD8', '#1a6b3c', '#1E8A3C']}
-        locations={[0, 0.55, 1]}
-        style={s.root}
+      <ScrollView
+        style={{ flex: 1, backgroundColor: BG }}
+        contentContainerStyle={s.scroll}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
       >
-        {/* ── LOGO ── */}
-        <TouchableOpacity style={s.logoRow} onPress={tapLogo} activeOpacity={0.9}>
-          <View style={s.iconMark}>
-            <View style={s.handle} />
-            <View style={s.body}>
-              <View style={s.kL} />
-              <View style={s.kTR} />
-              <View style={s.kBR} />
-            </View>
-          </View>
-          <View>
-            <Text style={s.brand}>KAAMKARO</Text>
-            <Text style={s.brandSub}>SWIPE · DISCOVER · GET HIRED</Text>
-          </View>
-        </TouchableOpacity>
+        {/* ── HEADER ── */}
+        <View style={s.header}>
+          <TouchableOpacity
+            style={s.backBtn}
+            onPress={() => step === 'otpCode' ? (setStep('phone'), setOtp(''), setError('')) : router.back()}
+            activeOpacity={0.7}
+          >
+            <Text style={s.backTxt}>←</Text>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={tapLogo} activeOpacity={0.85}>
+            <Image
+              source={require('../assets/images/kaam-karo-logo.jpg')}
+              style={s.logoCompact}
+              resizeMode="contain"
+            />
+          </TouchableOpacity>
+        </View>
 
         {logoTaps > 0 && logoTaps < 5 && (
           <Text style={s.devHint}>{5 - logoTaps} more taps for dev bypass</Text>
@@ -136,20 +162,16 @@ export default function LoginScreen() {
         {/* ── PHONE STEP ── */}
         {step === 'phone' && (
           <View style={s.content}>
-            <Text style={s.title}>Enter Mobile Number</Text>
-            <Text style={s.sub}>We'll send you a verification code</Text>
+            <Text style={s.title}>Enter your phone number</Text>
+            <Text style={s.sub}>We will send a one-time password by SMS. This keeps your account safe.</Text>
 
-            <View style={s.phoneBox}>
-              <View style={s.dialPart}>
-                <Text style={s.flag}>🇮🇳</Text>
-                <Text style={s.dialCode}>+91</Text>
-                <Text style={s.caret}>▾</Text>
-              </View>
-              <View style={s.sep} />
+            {/* Phone input with +91 prefix */}
+            <View style={s.inputWrap}>
+              <Text style={s.prefix}>+91</Text>
               <TextInput
-                style={s.phoneInput}
-                placeholder="Enter mobile number"
-                placeholderTextColor="rgba(255,255,255,0.5)"
+                style={s.input}
+                placeholder="0000000000"
+                placeholderTextColor={MUTED}
                 keyboardType="phone-pad"
                 maxLength={10}
                 value={phone}
@@ -160,99 +182,116 @@ export default function LoginScreen() {
               />
             </View>
 
+            <Text style={s.smallCenter}>We'll never share your number.</Text>
+
             {error ? <ErrBox text={error} /> : null}
 
+            {/* Safe note */}
+            <View style={s.safeNote}>
+              <View style={s.safeIcon}>
+                <Text style={s.safeIconTxt}>Safe</Text>
+              </View>
+              <Text style={s.safeTxt}>No spam. No public sharing. Your number is only used for login and trusted job updates.</Text>
+            </View>
+
+            {/* Send OTP button */}
             <TouchableOpacity
-              style={[s.btnWrap, (phone.length < 10 || loading) && s.btnDim]}
               onPress={sendOtp}
               disabled={phone.length < 10 || loading}
               activeOpacity={0.85}
+              style={[s.btnWrap, (phone.length < 10 || loading) && s.btnDim]}
             >
               <LinearGradient
-                colors={['#1B3FD8', '#1E8A3C']}
-                start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
-                style={s.btnGrad}
+                colors={['#08a63f', '#10bd52', '#1457c8']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={s.btn}
               >
                 {loading
                   ? <ActivityIndicator color="#fff" />
-                  : <Text style={s.btnTxt}>Send OTP →</Text>}
+                  : <Text style={s.btnTxt}>Send OTP</Text>}
               </LinearGradient>
             </TouchableOpacity>
 
-            <View style={s.trust}>
-              <Text style={s.trustTxt}>🔒  Secure login via OTP · No password. No spam.</Text>
-            </View>
+            <Text style={s.legal}>
+              By continuing, you agree to{' '}
+              <Text style={s.legalLink} onPress={() => Linking.openURL('https://kaamkaro.co.in/terms')}>Terms</Text>
+              {' '}and{' '}
+              <Text style={s.legalLink} onPress={() => Linking.openURL('https://kaamkaro.co.in/privacy')}>Privacy Policy</Text>.
+            </Text>
           </View>
         )}
 
-        {/* ── OTP STEP ── */}
-        {step === 'otp' && (
+        {/* ── OTP CODE STEP ── */}
+        {step === 'otpCode' && (
           <View style={s.content}>
-            <TouchableOpacity onPress={() => { setStep('phone'); setOtp(''); setError(''); }} style={s.back}>
-              <Text style={s.backTxt}>← Change number</Text>
-            </TouchableOpacity>
-
-            <Text style={s.otpEmoji}>🔐</Text>
             <Text style={s.title}>Enter OTP</Text>
-            <Text style={s.sub}>Sent to  <Text style={{ color: '#fff', fontWeight: '800' }}>+91 {phone}</Text></Text>
+            <Text style={s.sub}>
+              We sent a 6 digit code to{' '}
+              <Text style={{ fontWeight: '800', color: INK }}>+91 {phone}</Text>
+            </Text>
 
-            {/* Hidden input sits behind boxes — always focusable */}
-            <View style={s.boxWrapper}>
-              {/* Invisible TextInput stretched over the whole box row */}
-              <TextInput
-                ref={otpRef}
-                style={s.hiddenOtp}
-                value={otp}
-                onChangeText={handleOtpChange}
-                keyboardType="number-pad"
-                maxLength={6}
-                caretHidden
-                autoFocus
-                showSoftInputOnFocus
-              />
-
-              {/* Visible boxes on top */}
-              <View style={s.boxRow} pointerEvents="none">
-                {[0,1,2,3,4,5].map(i => (
-                  <View
-                    key={i}
-                    style={[s.box, i < otp.length && s.boxFilled, i === otp.length && otp.length < 6 && s.boxActive]}
-                  >
-                    <Text style={s.boxTxt}>{otp[i] || ''}</Text>
-                  </View>
-                ))}
-              </View>
-            </View>
-
-            <View style={s.resendRow}>
-              {timer > 0
-                ? <Text style={s.timerTxt}>Resend in <Text style={{ color: '#fff', fontWeight: '800' }}>00:{String(timer).padStart(2,'0')}</Text></Text>
-                : <TouchableOpacity onPress={sendOtp}><Text style={s.resendTxt}>Resend OTP</Text></TouchableOpacity>
-              }
-            </View>
+            {/* Single OTP input (NOT 6 boxes) */}
+            <TextInput
+              ref={otpRef}
+              style={s.otpInput}
+              value={otp}
+              onChangeText={handleOtpChange}
+              keyboardType="number-pad"
+              maxLength={6}
+              placeholder="Enter 6 digit OTP"
+              placeholderTextColor={MUTED}
+              autoFocus
+              inputMode="numeric"
+            />
 
             {error ? <ErrBox text={error} /> : null}
 
+            {/* Verify button */}
             <TouchableOpacity
-              style={[s.btnWrap, (otp.length < 6 || loading) && s.btnDim]}
-              onPress={() => verifyOtp()}
+              onPress={verifyOtp}
               disabled={otp.length < 6 || loading}
               activeOpacity={0.85}
+              style={[s.btnWrap, (otp.length < 6 || loading) && s.btnDim]}
             >
               <LinearGradient
-                colors={['#1B3FD8', '#1E8A3C']}
-                start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
-                style={s.btnGrad}
+                colors={['#08a63f', '#10bd52', '#1457c8']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={s.btn}
               >
                 {loading
                   ? <ActivityIndicator color="#fff" />
-                  : <Text style={s.btnTxt}>Verify & Continue →</Text>}
+                  : <Text style={s.btnTxt}>Verify & continue</Text>}
               </LinearGradient>
             </TouchableOpacity>
+
+            {/* btn-row: Change number + Resend code */}
+            <View style={s.btnRow}>
+              <TouchableOpacity
+                style={s.btnOutline}
+                onPress={() => { setStep('phone'); setOtp(''); setError(''); }}
+                activeOpacity={0.8}
+              >
+                <Text style={s.btnOutlineTxt}>Change number</Text>
+              </TouchableOpacity>
+              {timer > 0
+                ? (
+                  <View style={s.btnSoft}>
+                    <Text style={s.btnSoftTxt}>Resend in 00:{String(timer).padStart(2, '0')}</Text>
+                  </View>
+                )
+                : (
+                  <TouchableOpacity style={[s.btnSoft, s.btnSoftActive]} onPress={sendOtp} activeOpacity={0.8}>
+                    <Text style={[s.btnSoftTxt, { color: BLUE }]}>Resend code</Text>
+                  </TouchableOpacity>
+                )}
+            </View>
+
+            <Text style={s.smallCenter}>If the number is wrong, change it and send OTP again.</Text>
           </View>
         )}
-
-      </LinearGradient>
+      </ScrollView>
     </KeyboardAvoidingView>
   );
 }
@@ -266,99 +305,108 @@ function ErrBox({ text }: { text: string }) {
   );
 }
 const eb = StyleSheet.create({
-  box:    { backgroundColor: 'rgba(239,68,68,0.15)', borderRadius: 10, padding: 10, marginBottom: 14, borderLeftWidth: 3, borderLeftColor: RED },
-  txt:    { fontSize: 13, color: '#fca5a5', fontWeight: '600' },
-  dev:    { backgroundColor: 'rgba(255,255,255,0.15)', borderLeftColor: '#fff' },
-  devTxt: { color: '#fff' },
+  box:    { backgroundColor: 'rgba(229,72,77,0.08)', borderRadius: 10, padding: 10, marginBottom: 14, borderLeftWidth: 3, borderLeftColor: RED },
+  txt:    { fontSize: 13, color: RED, fontWeight: '600' },
+  dev:    { backgroundColor: 'rgba(8,166,63,0.08)', borderLeftColor: GREEN },
+  devTxt: { color: '#057a31' },
 });
 
 const s = StyleSheet.create({
-  root: { flex: 1 },
-
-  /* Logo */
-  logoRow: {
-    flexDirection: 'row', alignItems: 'center', gap: 14,
-    paddingTop: Platform.OS === 'ios' ? 70 : 56,
-    paddingHorizontal: 28, paddingBottom: 20,
+  scroll: {
+    paddingHorizontal: 20,
+    paddingTop: Platform.OS === 'ios' ? 56 : 40,
+    paddingBottom: 40,
   },
-  iconMark: { width: 62, height: 62, alignItems: 'center' },
-  handle: {
-    width: 22, height: 9, borderWidth: 3.5, borderColor: '#fff',
-    borderBottomWidth: 0, borderRadius: 6, marginBottom: -2, zIndex: 1,
-  },
-  body: {
-    width: 58, height: 46,
-    backgroundColor: 'rgba(255,255,255,0.15)',
-    borderRadius: 10, borderWidth: 2.5, borderColor: '#fff',
-    alignItems: 'center', justifyContent: 'center', overflow: 'hidden',
-  },
-  kL:  { position: 'absolute', left: 14, top: 8,  width: 4,  height: 28, backgroundColor: '#fff', borderRadius: 2 },
-  kTR: { position: 'absolute', left: 17, top: 8,  width: 15, height: 13, backgroundColor: '#fff', borderRadius: 2, transform: [{ rotate: '-35deg' }, { translateX: 3 }] },
-  kBR: { position: 'absolute', left: 17, top: 23, width: 15, height: 13, backgroundColor: '#fff', borderRadius: 2, transform: [{ rotate: '35deg'  }, { translateX: 3 }] },
-  brand:    { fontSize: 26, fontWeight: '900', color: '#fff', letterSpacing: 2 },
-  brandSub: { fontSize: 9,  fontWeight: '700', color: 'rgba(255,255,255,0.65)', letterSpacing: 1.5, marginTop: 2 },
-  devHint:  { fontSize: 11, color: 'rgba(255,255,255,0.5)', textAlign: 'center', fontStyle: 'italic', marginBottom: 4 },
 
-  /* Content */
-  content: { flex: 1, paddingHorizontal: 28, paddingTop: 8 },
+  /* Header */
+  header: {
+    flexDirection: 'row', alignItems: 'center', gap: 12,
+    marginBottom: 28,
+  },
+  backBtn: {
+    width: 44, height: 44, borderRadius: 12,
+    backgroundColor: '#fff',
+    borderWidth: 1, borderColor: BORDER,
+    alignItems: 'center', justifyContent: 'center',
+    shadowColor: INK, shadowOpacity: 0.05, shadowRadius: 6, elevation: 2,
+  },
+  backTxt:     { fontSize: 20, color: INK, fontWeight: '700' },
+  logoCompact: { width: 116, height: 34 },
 
-  title: { fontSize: 26, fontWeight: '900', color: '#fff', marginBottom: 6 },
-  sub:   { fontSize: 14, color: 'rgba(255,255,255,0.75)', marginBottom: 28 },
+  devHint: { fontSize: 11, color: MUTED, textAlign: 'center', fontStyle: 'italic', marginBottom: 8 },
+
+  content: { gap: 0 },
+
+  title: { fontSize: 32, fontWeight: '950', color: INK, marginBottom: 8, letterSpacing: -0.5, lineHeight: 38 },
+  sub:   { fontSize: 15, color: MUTED, marginBottom: 24, lineHeight: 22 },
 
   /* Phone input */
-  phoneBox: {
+  inputWrap: {
     flexDirection: 'row', alignItems: 'center',
-    borderWidth: 1.5, borderColor: 'rgba(255,255,255,0.4)',
-    borderRadius: 14, backgroundColor: 'rgba(255,255,255,0.12)',
-    height: 56, marginBottom: 16, overflow: 'hidden',
+    borderWidth: 1.5, borderColor: BORDER,
+    borderRadius: 20, backgroundColor: '#fff',
+    minHeight: 58, marginBottom: 10, overflow: 'hidden',
+    shadowColor: INK, shadowOpacity: 0.05, shadowRadius: 8, elevation: 2,
   },
-  dialPart: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 14, gap: 6 },
-  flag:     { fontSize: 22 },
-  dialCode: { fontSize: 16, fontWeight: '700', color: '#fff' },
-  caret:    { fontSize: 12, color: 'rgba(255,255,255,0.6)' },
-  sep:      { width: 1.5, height: 30, backgroundColor: 'rgba(255,255,255,0.3)', marginHorizontal: 4 },
-  phoneInput: { flex: 1, fontSize: 16, color: '#fff', fontWeight: '600', paddingRight: 16 },
+  prefix: {
+    paddingHorizontal: 16, fontSize: 16, fontWeight: '700', color: INK,
+    borderRightWidth: 1, borderRightColor: BORDER,
+    alignSelf: 'stretch', textAlignVertical: 'center',
+    lineHeight: 58,
+  },
+  input: { flex: 1, fontSize: 16, color: INK, fontWeight: '600', paddingHorizontal: 16, height: 58 },
 
-  /* Button */
+  /* Single OTP input */
+  otpInput: {
+    borderWidth: 1.5, borderColor: BORDER,
+    borderRadius: 20, backgroundColor: '#fff',
+    minHeight: 58, fontSize: 22, color: INK, fontWeight: '700',
+    paddingHorizontal: 20, marginBottom: 20,
+    letterSpacing: 8,
+    shadowColor: INK, shadowOpacity: 0.05, shadowRadius: 8, elevation: 2,
+  },
+
+  smallCenter: { fontSize: 12, color: MUTED, textAlign: 'center', marginBottom: 16 },
+
+  /* Safe note */
+  safeNote: {
+    flexDirection: 'row', alignItems: 'center', gap: 12,
+    backgroundColor: '#fff', borderRadius: 16,
+    padding: 14, marginBottom: 20,
+    borderWidth: 1, borderColor: BORDER,
+  },
+  safeIcon:    { width: 38, height: 38, borderRadius: 19, backgroundColor: GREEN, alignItems: 'center', justifyContent: 'center' },
+  safeIconTxt: { fontSize: 9, fontWeight: '900', color: '#fff' },
+  safeTxt:     { flex: 1, fontSize: 13, color: MUTED, lineHeight: 18 },
+
+  /* Primary button */
   btnWrap: {
-    borderRadius: 14, marginBottom: 16, overflow: 'hidden',
-    shadowColor: '#1B3FD8', shadowOpacity: 0.4, shadowRadius: 10, elevation: 5,
+    borderRadius: 18, overflow: 'hidden', marginBottom: 14,
+    shadowColor: GREEN, shadowOpacity: 0.3, shadowRadius: 14,
+    shadowOffset: { width: 0, height: 4 }, elevation: 5,
   },
-  btnGrad: { paddingVertical: 16, alignItems: 'center' },
-  btnDim:  { opacity: 0.45, shadowOpacity: 0 },
-  btnTxt:  { fontSize: 16, fontWeight: '800', color: '#fff', letterSpacing: 0.3 },
+  btnDim: { opacity: 0.45, shadowOpacity: 0 },
+  btn:    { minHeight: 58, alignItems: 'center', justifyContent: 'center' },
+  btnTxt: { fontSize: 17, fontWeight: '900', color: '#fff', letterSpacing: 0.2 },
 
-  trust:    { alignItems: 'center' },
-  trustTxt: { fontSize: 12, color: 'rgba(255,255,255,0.7)' },
-
-  /* OTP */
-  back:    { marginBottom: 20 },
-  backTxt: { fontSize: 14, color: 'rgba(255,255,255,0.8)', fontWeight: '600' },
-  otpEmoji:{ fontSize: 40, textAlign: 'center', marginBottom: 12 },
-
-  boxWrapper: {
-    marginTop: 28, marginBottom: 24,
-    alignItems: 'center',
-  },
-  hiddenOtp: {
-    position: 'absolute',
-    width: '100%', height: 76,
-    opacity: 0,
-    color: 'transparent',
-    fontSize: 1,
-  },
-  boxRow: { flexDirection: 'row', gap: 8, justifyContent: 'center' },
-  box: {
-    width: 46, height: 58, borderRadius: 12,
-    borderWidth: 2, borderColor: 'rgba(255,255,255,0.35)',
-    backgroundColor: 'rgba(255,255,255,0.12)',
+  /* btn-row */
+  btnRow: { flexDirection: 'row', gap: 10, marginBottom: 16 },
+  btnOutline: {
+    flex: 1, minHeight: 50, borderRadius: 14,
+    backgroundColor: '#fff',
+    borderWidth: 1.5, borderColor: 'rgba(8,166,63,0.32)',
     alignItems: 'center', justifyContent: 'center',
   },
-  boxActive: { borderColor: '#fff', borderWidth: 2.5, backgroundColor: 'rgba(255,255,255,0.2)' },
-  boxFilled: { borderColor: '#fff', backgroundColor: 'rgba(255,255,255,0.25)' },
-  boxTxt:    { fontSize: 22, fontWeight: '900', color: '#fff' },
+  btnOutlineTxt: { fontSize: 14, fontWeight: '700', color: '#057a31' },
+  btnSoft: {
+    flex: 1, minHeight: 50, borderRadius: 14,
+    backgroundColor: '#eef2ff',
+    alignItems: 'center', justifyContent: 'center',
+  },
+  btnSoftActive: { backgroundColor: '#eef2ff' },
+  btnSoftTxt:    { fontSize: 14, fontWeight: '700', color: MUTED },
 
-  resendRow: { alignItems: 'center', marginBottom: 20 },
-  timerTxt:  { fontSize: 13, color: 'rgba(255,255,255,0.7)' },
-  resendTxt: { fontSize: 14, color: '#fff', fontWeight: '800' },
+  /* Legal */
+  legal:     { fontSize: 12, color: MUTED, textAlign: 'center', lineHeight: 18 },
+  legalLink: { color: BLUE, fontWeight: '700' },
 });
