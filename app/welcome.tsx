@@ -1,208 +1,285 @@
-import { useState, useRef } from 'react';
 import {
-  View, Text, StyleSheet, TouchableOpacity, Dimensions,
-  Animated, StatusBar, Image
+  View, Text, StyleSheet, TouchableOpacity, StatusBar,
+  Platform, Linking, Dimensions,
 } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const { width: SW, height: SH } = Dimensions.get('window');
-const API_URL = 'https://kaam-backend-production.up.railway.app';
 
 export default function WelcomeScreen() {
   const router = useRouter();
-  const [selected, setSelected] = useState<'SEEKER' | 'EMPLOYER' | null>(null);
-  const scaleSeeker = useRef(new Animated.Value(1)).current;
-  const scaleEmployer = useRef(new Animated.Value(1)).current;
 
-  const press = (scale: Animated.Value, type: 'SEEKER' | 'EMPLOYER') => {
-    setSelected(type);
-    Animated.sequence([
-      Animated.spring(scale, { toValue: 0.95, useNativeDriver: true }),
-      Animated.spring(scale, { toValue: 1, useNativeDriver: true }),
-    ]).start();
-  };
-
-  const proceed = async () => {
-    if (!selected) return;
-    await AsyncStorage.multiSet([
-      ['pendingUserType', selected],
-      ['hasSeenWelcome', 'true'],
-    ]);
+  const go = async () => {
+    await AsyncStorage.setItem('hasSeenWelcome', 'true');
     router.push('/login');
   };
 
   return (
-    <View style={styles.root}>
-      <StatusBar barStyle="light-content" backgroundColor="#1B3FAB" />
+    <View style={s.root}>
+      <StatusBar barStyle="dark-content" backgroundColor="#fff" translucent={false} />
 
-      {/* Hero */}
-      <View style={styles.hero}>
-        <View style={styles.logoWrap}>
-          <Text style={styles.logoText}>K</Text>
+      {/* ══ UPPER — white hero section ══ */}
+      <View style={s.upper}>
+
+        {/* Logo */}
+        <View style={s.logoBlock}>
+          {/* Icon mark */}
+          <View style={s.iconWrap}>
+            <LinearGradient colors={['#1B3FD8', '#1E8A3C']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={s.iconGrad}>
+              <View style={s.handle} />
+              <View style={s.body}>
+                <View style={s.kL} /><View style={s.kTR} /><View style={s.kBR} />
+              </View>
+            </LinearGradient>
+          </View>
+          {/* Brand text stacked */}
+          <View style={s.brandBlock}>
+            <View style={{ flexDirection: 'row' }}>
+              <Text style={[s.brand, { color: '#1B3FD8' }]}>KAAM</Text>
+              <Text style={[s.brand, { color: '#1E8A3C' }]}>KARO</Text>
+            </View>
+            <Text style={s.tagline}>SWIPE · DISCOVER · GET HIRED</Text>
+          </View>
         </View>
-        <Text style={styles.brand}>KaamKaro</Text>
-        <Text style={styles.tagline}>India ka Apna Job App</Text>
 
-        {/* Stats bar */}
-        <View style={styles.statsRow}>
-          <StatItem value="50K+" label="Jobs" />
-          <View style={styles.statDiv} />
-          <StatItem value="10L+" label="Workers" />
-          <View style={styles.statDiv} />
-          <StatItem value="Free" label="Always" />
+        {/* Headline */}
+        <View style={s.headlineBlock}>
+          <Text style={s.h1}>Find work near you</Text>
+          <Text style={s.h2}>Start today.</Text>
+        </View>
+
+        {/* Character illustration */}
+        <View style={s.illustrationArea}>
+
+          {/* India Gate silhouette — decorative */}
+          <View style={s.silhouette}>
+            {/* Base arch */}
+            <View style={s.archMain} />
+            <View style={s.archLeft} />
+            <View style={s.archRight} />
+            <View style={s.archBase} />
+          </View>
+
+          {/* Location pins */}
+          <Text style={[s.pin, { left: SW * 0.12, top: 20 }]}>📍</Text>
+          <Text style={[s.pin, { right: SW * 0.12, top: 50 }]}>📍</Text>
+
+          {/* Male character */}
+          <View style={[s.charCard, { left: SW * 0.04, bottom: 0 }]}>
+            <View style={s.charBg}>
+              <Text style={s.charEmoji}>👨‍💼</Text>
+            </View>
+            <View style={s.charLabel}>
+              <Text style={s.charLabelTxt}>👷 Worker</Text>
+            </View>
+          </View>
+
+          {/* Female character */}
+          <View style={[s.charCard, { right: SW * 0.04, bottom: 0 }]}>
+            <View style={[s.charBg, { backgroundColor: '#EEF2FF' }]}>
+              <Text style={s.charEmoji}>👩‍🍳</Text>
+            </View>
+            <View style={[s.charLabel, { backgroundColor: '#1E8A3C' }]}>
+              <Text style={s.charLabelTxt}>✓ Hired</Text>
+            </View>
+          </View>
+
+          {/* Centre match badge */}
+          <View style={s.matchBadge}>
+            <Text style={s.matchBadgeTxt}>🤝</Text>
+            <Text style={s.matchBadgeLabel}>Matched!</Text>
+          </View>
+
         </View>
       </View>
 
-      {/* Role selection */}
-      <View style={styles.sheet}>
-        <Text style={styles.sheetTitle}>Main kaun hoon?</Text>
-        <Text style={styles.sheetSub}>Who are you? / आप कौन हैं?</Text>
-
-        <View style={styles.cards}>
-          <Animated.View style={{ transform: [{ scale: scaleSeeker }], flex: 1 }}>
-            <TouchableOpacity
-              style={[styles.roleCard, selected === 'SEEKER' && styles.roleCardActive]}
-              onPress={() => press(scaleSeeker, 'SEEKER')}
-              activeOpacity={0.85}
-            >
-              <Text style={styles.roleEmoji}>👷</Text>
-              <Text style={[styles.roleTitle, selected === 'SEEKER' && styles.roleTitleActive]}>
-                Mujhe Kaam{'\n'}chahiye
-              </Text>
-              <Text style={[styles.roleDesc, selected === 'SEEKER' && styles.roleDescActive]}>
-                I'm looking{'\n'}for work
-              </Text>
-              {selected === 'SEEKER' && (
-                <View style={styles.checkBadge}><Text style={styles.checkText}>✓</Text></View>
-              )}
-            </TouchableOpacity>
-          </Animated.View>
-
-          <Animated.View style={{ transform: [{ scale: scaleEmployer }], flex: 1 }}>
-            <TouchableOpacity
-              style={[styles.roleCard, selected === 'EMPLOYER' && styles.roleCardActive]}
-              onPress={() => press(scaleEmployer, 'EMPLOYER')}
-              activeOpacity={0.85}
-            >
-              <Text style={styles.roleEmoji}>🏢</Text>
-              <Text style={[styles.roleTitle, selected === 'EMPLOYER' && styles.roleTitleActive]}>
-                Mujhe Log{'\n'}chahiye
-              </Text>
-              <Text style={[styles.roleDesc, selected === 'EMPLOYER' && styles.roleDescActive]}>
-                I want to{'\n'}hire workers
-              </Text>
-              {selected === 'EMPLOYER' && (
-                <View style={styles.checkBadge}><Text style={styles.checkText}>✓</Text></View>
-              )}
-            </TouchableOpacity>
-          </Animated.View>
+      {/* ══ LOWER — gradient bottom section ══ */}
+      <LinearGradient
+        colors={['#1B3FD8', '#1a6b3c', '#1E8A3C']}
+        locations={[0, 0.5, 1]}
+        style={s.lower}
+      >
+        {/* Stats */}
+        <View style={s.statsRow}>
+          <View style={s.statItem}>
+            <Text style={s.statNum}>500+</Text>
+            <Text style={s.statLbl}>Active Jobs</Text>
+          </View>
+          <View style={s.statDivider} />
+          <View style={s.statItem}>
+            <Text style={s.statNum}>400+</Text>
+            <Text style={s.statLbl}>Workers Hired</Text>
+          </View>
+          <View style={s.statDivider} />
+          <View style={s.statItem}>
+            <Text style={s.statNum}>50+</Text>
+            <Text style={s.statLbl}>Cities</Text>
+          </View>
         </View>
 
-        <TouchableOpacity
-          style={[styles.continueBtn, !selected && styles.continueBtnDisabled]}
-          onPress={proceed}
-          disabled={!selected}
-        >
-          <Text style={styles.continueBtnText}>
-            {selected ? 'Aage Badho →' : 'Apna role chuniye'}
-          </Text>
+        {/* CTA button */}
+        <TouchableOpacity style={s.btn} onPress={go} activeOpacity={0.88}>
+          <Text style={s.btnTxt}>Get Started</Text>
+          <Text style={s.btnArrow}>→</Text>
         </TouchableOpacity>
 
-        <Text style={styles.loginLink}>
-          Already have an account?{' '}
-          <Text style={styles.loginLinkBold} onPress={async () => {
-            await AsyncStorage.setItem('hasSeenWelcome', 'true');
-            router.push('/login');
-          }}>
-            Login
-          </Text>
-        </Text>
+        {/* Secure note */}
+        <View style={s.secureRow}>
+          <Text style={s.secureCheck}>✓</Text>
+          <View>
+            <Text style={s.secureLine1}>100% secure OTP login</Text>
+            <Text style={s.secureLine2}>No password. No spam. No tension.</Text>
+          </View>
+        </View>
 
-        <Text style={styles.terms}>
-          By continuing, you agree to KaamKaro's Terms & Privacy Policy
+        {/* Terms */}
+        <Text style={s.terms}>
+          By continuing you agree to our{' '}
+          <Text style={s.link} onPress={() => Linking.openURL('https://kaamkaro.co.in/terms')}>Terms</Text>
+          {' '}and{' '}
+          <Text style={s.link} onPress={() => Linking.openURL('https://kaamkaro.co.in/privacy')}>Privacy Policy</Text>
         </Text>
-      </View>
+      </LinearGradient>
     </View>
   );
 }
 
-function StatItem({ value, label }: { value: string; label: string }) {
-  return (
-    <View style={styles.statItem}>
-      <Text style={styles.statValue}>{value}</Text>
-      <Text style={styles.statLabel}>{label}</Text>
-    </View>
-  );
-}
+const s = StyleSheet.create({
+  root: { flex: 1, backgroundColor: '#fff' },
 
-const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: '#1B3FAB' },
-
-  hero: {
-    backgroundColor: '#1B3FAB',
-    alignItems: 'center',
-    paddingTop: 60,
-    paddingBottom: 32,
-    paddingHorizontal: 24,
+  /* ── UPPER ── */
+  upper: {
+    flex: 1,
+    backgroundColor: '#fff',
+    paddingTop: Platform.OS === 'ios' ? 52 : 36,
+    overflow: 'hidden',
   },
-  logoWrap: {
-    width: 72, height: 72, borderRadius: 22,
-    backgroundColor: 'rgba(255,255,255,0.25)',
-    alignItems: 'center', justifyContent: 'center',
-    marginBottom: 12, borderWidth: 2, borderColor: 'rgba(255,255,255,0.4)',
-  },
-  logoText: { fontSize: 38, fontWeight: '900', color: '#fff' },
-  brand: { fontSize: 32, fontWeight: '900', color: '#fff', letterSpacing: -0.5 },
-  tagline: { fontSize: 14, color: 'rgba(255,255,255,0.85)', marginTop: 4, marginBottom: 24, fontWeight: '500' },
 
-  statsRow: {
-    flexDirection: 'row', alignItems: 'center',
+  /* Logo */
+  logoBlock: {
+    flexDirection: 'row', alignItems: 'center', gap: 12,
+    paddingHorizontal: 24, marginBottom: 18,
+  },
+  iconWrap: {
+    width: 64, height: 64, borderRadius: 16, overflow: 'hidden',
+    shadowColor: '#1B3FD8', shadowOpacity: 0.35, shadowRadius: 10, elevation: 6,
+  },
+  iconGrad: {
+    flex: 1, alignItems: 'center', justifyContent: 'center',
+  },
+  handle: {
+    width: 22, height: 8, borderWidth: 3, borderColor: '#fff',
+    borderBottomWidth: 0, borderRadius: 5, marginBottom: -2, zIndex: 1,
+  },
+  body: {
+    width: 48, height: 36,
     backgroundColor: 'rgba(255,255,255,0.18)',
-    borderRadius: 16, paddingVertical: 12, paddingHorizontal: 24,
-    width: '100%',
+    borderRadius: 8, borderWidth: 2.5, borderColor: '#fff',
+    alignItems: 'center', justifyContent: 'center', overflow: 'hidden',
   },
-  statItem: { flex: 1, alignItems: 'center' },
-  statValue: { fontSize: 16, fontWeight: '900', color: '#fff' },
-  statLabel: { fontSize: 11, color: 'rgba(255,255,255,0.75)', marginTop: 2 },
-  statDiv: { width: 1, height: 28, backgroundColor: 'rgba(255,255,255,0.3)' },
+  kL:  { position: 'absolute', left: 11, top: 6,  width: 4,  height: 22, backgroundColor: '#fff', borderRadius: 2 },
+  kTR: { position: 'absolute', left: 14, top: 6,  width: 12, height: 10, backgroundColor: '#fff', borderRadius: 2, transform: [{ rotate: '-35deg' }, { translateX: 2 }] },
+  kBR: { position: 'absolute', left: 14, top: 18, width: 12, height: 10, backgroundColor: '#fff', borderRadius: 2, transform: [{ rotate: '35deg'  }, { translateX: 2 }] },
 
-  sheet: {
-    flex: 1, backgroundColor: '#fff',
-    borderTopLeftRadius: 32, borderTopRightRadius: 32,
-    paddingHorizontal: 24, paddingTop: 28, paddingBottom: 32,
-  },
-  sheetTitle: { fontSize: 24, fontWeight: '900', color: '#1A1A1A', textAlign: 'center' },
-  sheetSub: { fontSize: 13, color: '#999', textAlign: 'center', marginTop: 4, marginBottom: 24 },
+  brandBlock: { gap: 3 },
+  brand:      { fontSize: 30, fontWeight: '900', letterSpacing: 1 },
+  tagline:    { fontSize: 9, fontWeight: '800', color: '#9CA3AF', letterSpacing: 2 },
 
-  cards: { flexDirection: 'row', gap: 12, marginBottom: 24 },
-  roleCard: {
-    borderRadius: 20, padding: 20, borderWidth: 2, borderColor: '#F0EDE8',
-    backgroundColor: '#FAFAFA', alignItems: 'center', position: 'relative',
-  },
-  roleCardActive: { borderColor: '#1B3FAB', backgroundColor: '#FFF5F5' },
-  roleEmoji: { fontSize: 40, marginBottom: 12 },
-  roleTitle: { fontSize: 15, fontWeight: '900', color: '#1A1A1A', textAlign: 'center', lineHeight: 20, marginBottom: 6 },
-  roleTitleActive: { color: '#1B3FAB' },
-  roleDesc: { fontSize: 11, color: '#bbb', textAlign: 'center', lineHeight: 16 },
-  roleDescActive: { color: '#FF8A8A' },
-  checkBadge: {
-    position: 'absolute', top: 10, right: 10,
-    width: 22, height: 22, borderRadius: 11,
-    backgroundColor: '#1B3FAB', alignItems: 'center', justifyContent: 'center',
-  },
-  checkText: { color: '#fff', fontSize: 12, fontWeight: '900' },
+  /* Headline */
+  headlineBlock: { paddingHorizontal: 24, marginBottom: 12 },
+  h1: { fontSize: 30, fontWeight: '900', color: '#111827', lineHeight: 36 },
+  h2: { fontSize: 30, fontWeight: '900', color: '#1E8A3C', lineHeight: 38 },
 
-  continueBtn: {
-    backgroundColor: '#1B3FAB', borderRadius: 16, padding: 18,
-    alignItems: 'center', marginBottom: 16,
-    shadowColor: '#1B3FAB', shadowOpacity: 0.3, shadowRadius: 12,
-    shadowOffset: { width: 0, height: 4 }, elevation: 6,
+  /* Illustration */
+  illustrationArea: {
+    flex: 1, position: 'relative',
+    alignItems: 'center', justifyContent: 'flex-end',
   },
-  continueBtnDisabled: { backgroundColor: '#7BA3E8', shadowOpacity: 0 },
-  continueBtnText: { color: '#fff', fontWeight: '900', fontSize: 17 },
 
-  loginLink: { textAlign: 'center', fontSize: 14, color: '#999', marginBottom: 16 },
-  loginLinkBold: { color: '#1B3FAB', fontWeight: '800' },
-  terms: { textAlign: 'center', fontSize: 11, color: '#bbb', lineHeight: 16 },
+  /* India Gate silhouette */
+  silhouette: {
+    position: 'absolute', bottom: 0,
+    width: SW * 0.55, alignItems: 'center',
+    opacity: 0.07,
+  },
+  archMain:  { width: 60, height: 90, borderTopLeftRadius: 30, borderTopRightRadius: 30, backgroundColor: '#1B3FD8' },
+  archLeft:  { position: 'absolute', bottom: 0, left: SW * 0.04, width: 30, height: 60, borderTopLeftRadius: 15, borderTopRightRadius: 15, backgroundColor: '#1B3FD8' },
+  archRight: { position: 'absolute', bottom: 0, right: SW * 0.04, width: 30, height: 60, borderTopLeftRadius: 15, borderTopRightRadius: 15, backgroundColor: '#1B3FD8' },
+  archBase:  { position: 'absolute', bottom: 0, width: SW * 0.55, height: 12, backgroundColor: '#1B3FD8' },
+
+  /* Location pins */
+  pin: { position: 'absolute', fontSize: 20 },
+
+  /* Character cards */
+  charCard: { position: 'absolute', alignItems: 'center', gap: 6 },
+  charBg: {
+    width: SW * 0.36, height: SW * 0.44,
+    backgroundColor: '#E8F5EE',
+    borderRadius: 20,
+    alignItems: 'center', justifyContent: 'flex-end',
+    overflow: 'hidden',
+    borderWidth: 1.5, borderColor: '#d1e8d8',
+  },
+  charEmoji: { fontSize: SW * 0.28, lineHeight: SW * 0.32 },
+  charLabel: {
+    backgroundColor: '#1B3FD8',
+    paddingHorizontal: 14, paddingVertical: 6, borderRadius: 20,
+  },
+  charLabelTxt: { fontSize: 11, fontWeight: '800', color: '#fff' },
+
+  /* Match badge centre */
+  matchBadge: {
+    position: 'absolute',
+    bottom: SW * 0.14,
+    alignItems: 'center',
+    backgroundColor: '#fff',
+    borderRadius: 20,
+    paddingHorizontal: 12, paddingVertical: 6,
+    borderWidth: 2, borderColor: '#E8F5EE',
+    shadowColor: '#000', shadowOpacity: 0.1, shadowRadius: 8, elevation: 4,
+  },
+  matchBadgeTxt:   { fontSize: 20 },
+  matchBadgeLabel: { fontSize: 10, fontWeight: '800', color: '#1E8A3C', marginTop: 1 },
+
+  /* ── LOWER ── */
+  lower: {
+    paddingHorizontal: 24,
+    paddingTop: 20,
+    paddingBottom: Platform.OS === 'ios' ? 44 : 32,
+    gap: 14,
+  },
+
+  /* Stats */
+  statsRow: {
+    flexDirection: 'row', justifyContent: 'center', alignItems: 'center',
+    backgroundColor: 'rgba(255,255,255,0.13)',
+    borderWidth: 1, borderColor: 'rgba(255,255,255,0.2)',
+    borderRadius: 16, paddingVertical: 12, marginBottom: 4,
+  },
+  statItem:    { flex: 1, alignItems: 'center' },
+  statNum:     { fontSize: 20, fontWeight: '900', color: '#fff' },
+  statLbl:     { fontSize: 10, color: 'rgba(255,255,255,0.65)', fontWeight: '600', marginTop: 1, textAlign: 'center' },
+  statDivider: { width: 1, height: 32, backgroundColor: 'rgba(255,255,255,0.2)' },
+
+  /* CTA */
+  btn: {
+    backgroundColor: '#fff',
+    borderRadius: 16, height: 58,
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 12,
+    shadowColor: '#000', shadowOpacity: 0.15, shadowRadius: 10, elevation: 6,
+  },
+  btnTxt:   { fontSize: 18, fontWeight: '800', color: '#1E8A3C' },
+  btnArrow: { fontSize: 22, color: '#1E8A3C', fontWeight: '900' },
+
+  /* Secure */
+  secureRow:  { flexDirection: 'row', alignItems: 'center', gap: 10, justifyContent: 'center' },
+  secureCheck:{ fontSize: 16, color: '#2ECC71', fontWeight: '900' },
+  secureLine1:{ fontSize: 13, fontWeight: '800', color: '#fff' },
+  secureLine2:{ fontSize: 11, color: 'rgba(255,255,255,0.65)', marginTop: 1 },
+
+  /* Terms */
+  terms: { fontSize: 11, color: 'rgba(255,255,255,0.45)', textAlign: 'center', lineHeight: 17 },
+  link:  { color: 'rgba(255,255,255,0.8)', fontWeight: '700', textDecorationLine: 'underline' },
 });
