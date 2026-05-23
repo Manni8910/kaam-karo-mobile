@@ -16,8 +16,6 @@ const BG     = '#f8fbff';
 const BORDER = '#e2e8f0';
 const RED    = '#e5484d';
 
-// Dev password derived from phone — keeps each user's account unique
-const devPassword = (phone: string) => `kaam_${phone}_dev`;
 
 type Step = 'phone' | 'otp';
 
@@ -45,26 +43,19 @@ export default function LoginScreen() {
     if (token !== '123456') { setError('Incorrect code. Use 123456'); return; }
     setError(''); setLoading(true);
     try {
-      const email    = `91${phone.trim()}@phone.kaamkaro.co.in`;
-      const password = devPassword(phone.trim());
-
-      // Try sign in first (account already exists)
-      let { data, error: signInErr } = await supabase.auth.signInWithPassword({ email, password });
-
-      // If sign in failed (account not confirmed yet), sign up + sign in
-      if (signInErr || !data.session) {
-        const { error: signUpErr } = await supabase.auth.signUp({ email, password });
-        if (signUpErr) throw signUpErr;
-        const res = await supabase.auth.signInWithPassword({ email, password });
-        if (res.error) throw res.error;
-        data = res.data;
-      }
-
-      if (!data.session) throw new Error('Login failed — check Supabase email confirmation settings');
+      // Anonymous sign-in — no email address, no SMS, no rate limits
+      const { data, error: anonErr } = await supabase.auth.signInAnonymously();
+      if (anonErr) throw anonErr;
+      const uid = data.session?.user.id;
+      if (!uid) throw new Error('Login failed — could not create session');
 
       // Ensure user row in public.users
-      const uid = data.session.user.id;
-      const { data: existing } = await supabase.from('users').select('id, has_worker_profile, has_employer_profile').eq('id', uid).maybeSingle();
+      const { data: existing } = await supabase
+        .from('users')
+        .select('id, has_worker_profile, has_employer_profile')
+        .eq('id', uid)
+        .maybeSingle();
+
       if (!existing) {
         await supabase.from('users').insert({
           id: uid,
