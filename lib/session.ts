@@ -8,8 +8,8 @@ const PHONE_KEY = 'kaam_phone';
  * Same phone always → same UID, so data persists across logouts.
  */
 export function phoneToUid(phone: string): string {
-  const p = phone.padStart(12, '0');
-  return `91000000-0000-4000-8000-00${p}`;
+  const p = phone.padStart(12, '0');   // 10-digit phone → 12 hex chars for last UUID segment
+  return `91000000-0000-4000-8000-${p}`;
 }
 
 export const getUID   = (): Promise<string | null> => AsyncStorage.getItem(UID_KEY);
