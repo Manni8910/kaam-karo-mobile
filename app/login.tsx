@@ -30,21 +30,13 @@ export default function LoginScreen() {
   const [error, setError]     = useState('');
   const otpRef                = useRef<TextInput>(null);
 
-  const sendOtp = async () => {
+  const sendOtp = () => {
     const p = phone.trim();
     if (p.length !== 10) { setError('Enter a valid 10-digit number'); return; }
-    setError(''); setLoading(true);
-    try {
-      // Pre-create the account silently (ignore errors — may already exist)
-      const email    = `91${p}@phone.kaamkaro.co.in`;
-      const password = devPassword(p);
-      await supabase.auth.signUp({ email, password });
-      // Show OTP step with dev code
-      setOtp(''); setStep('otp');
-      setTimeout(() => otpRef.current?.focus(), 300);
-    } catch {
-      setStep('otp'); // show OTP step anyway
-    } finally { setLoading(false); }
+    setError('');
+    setOtp('');
+    setStep('otp');
+    setTimeout(() => otpRef.current?.focus(), 300);
   };
 
   const verifyOtp = async (code?: string) => {
