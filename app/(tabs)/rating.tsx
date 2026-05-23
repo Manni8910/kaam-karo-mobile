@@ -38,11 +38,11 @@ export default function RatingScreen() {
     if (stars === 0) { Alert.alert('', 'Please select a star rating'); return; }
     setSubmit(true);
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) throw new Error('Not logged in');
+      const uid = await AsyncStorage.getItem('kaam_uid');
+      if (!uid) throw new Error('Not logged in');
       const { error } = await supabase.from('ratings').upsert({
         application_id: matchId,
-        rater_id: session.user.id,
+        rater_id: uid,
         rating: stars,
         review: review.trim(),
       }, { onConflict: 'application_id,rater_id' });

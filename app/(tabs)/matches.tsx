@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, ActivityIndicator, RefreshControl, Platform, StatusBar } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { supabase } from '../../lib/supabase';
 
@@ -35,12 +36,12 @@ export default function MatchesScreen() {
   const load = async (refresh = false) => {
     if (refresh) setRefresh(true); else setLoading(true);
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) { router.replace('/login'); return; }
+      const uid = await AsyncStorage.getItem('kaam_uid');
+      if (!uid) { router.replace('/login'); return; }
       const { data } = await supabase
         .from('applications')
         .select('*, jobs:job_id(id, title, salary, salary_type, city, formatted_location, employer_profiles:employer_id(business_name))')
-        .eq('worker_id', session.user.id)
+        .eq('worker_id', uid)
         .neq('status', 'skipped')
         .order('created_at', { ascending: false });
       setMatches((data || []).map(normalizeApp));

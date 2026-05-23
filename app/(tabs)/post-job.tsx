@@ -44,9 +44,8 @@ export default function PostJobScreen() {
   useFocusEffect(useCallback(() => { init(); }, []));
 
   const init = async () => {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) { router.replace('/login'); return; }
-    const uid = session.user.id;
+    const uid = await AsyncStorage.getItem('kaam_uid');
+    if (!uid) { router.replace('/login'); return; }
     const { data: user } = await supabase.from('users').select('active_role').eq('id', uid).maybeSingle();
     const role = user?.active_role || 'worker';
     setUserType(role === 'employer' ? 'EMPLOYER' : 'SEEKER');
@@ -73,9 +72,9 @@ export default function PostJobScreen() {
     }
     setPosting(true);
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) throw new Error('Not logged in');
-      const { data: ep } = await supabase.from('employer_profiles').select('id').eq('user_id', session.user.id).maybeSingle();
+      const uid = await AsyncStorage.getItem('kaam_uid');
+      if (!uid) throw new Error('Not logged in');
+      const { data: ep } = await supabase.from('employer_profiles').select('id').eq('user_id', uid).maybeSingle();
       if (!ep) throw new Error('Employer profile not found');
       const salaryType = jobType === 'CONTRACT' ? 'day' : 'month';
       const { error } = await supabase.from('jobs').insert({

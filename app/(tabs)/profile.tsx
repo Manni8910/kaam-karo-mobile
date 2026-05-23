@@ -7,6 +7,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter, useFocusEffect } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { supabase } from '../../lib/supabase';
+import { clearSession } from '../../lib/session';
 import * as ImagePicker from 'expo-image-picker';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -51,9 +52,8 @@ export default function ProfileScreen() {
   const loadProfile = async () => {
     setLoading(true);
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) { router.replace('/login'); return; }
-      const uid = session.user.id;
+      const uid = await AsyncStorage.getItem('kaam_uid');
+      if (!uid) { router.replace('/login'); return; }
 
       const { data: user } = await supabase.from('users').select('phone_number, active_role').eq('id', uid).maybeSingle();
       const role = user?.active_role || 'worker';
@@ -76,12 +76,11 @@ export default function ProfileScreen() {
 
         // Compute strength
         const checks = [
-          !!(sp?.firstName || data.user?.name),
-          !!data.user?.phone,
-          !!sp?.locationName,
+          !!wp?.full_name,
+          !!user?.phone_number,
+          !!wp?.city,
           ids.length > 0,
-          !!sp?.bio,
-          !!(sp_photo || pic),
+          !!wp?.photo_url,
         ];
         setStrength(Math.round((checks.filter(Boolean).length / checks.length) * 100));
       }
@@ -111,8 +110,7 @@ export default function ProfileScreen() {
       {
         text: 'Logout', style: 'destructive',
         onPress: async () => {
-          await supabase.auth.signOut();
-          await AsyncStorage.multiRemove(['userCity', 'profileCity', 'profilePic', 'hasSeenSwipeGuide']);
+          await clearSession();
           router.replace('/welcome');
         },
       },

@@ -7,6 +7,7 @@ import {
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { supabase } from '../lib/supabase';
+import { phoneToUid, setSession } from '../lib/session';
 
 const INK    = '#06142f';
 const GREEN  = '#08a63f';
@@ -43,13 +44,11 @@ export default function LoginScreen() {
     if (token !== '123456') { setError('Incorrect code. Use 123456'); return; }
     setError(''); setLoading(true);
     try {
-      // Anonymous sign-in — no email address, no SMS, no rate limits
-      const { data, error: anonErr } = await supabase.auth.signInAnonymously();
-      if (anonErr) throw anonErr;
-      const uid = data.session?.user.id;
-      if (!uid) throw new Error('Login failed — could not create session');
+      // Deterministic UID from phone — no Supabase auth call, no rate limits
+      const uid = phoneToUid(phone.trim());
+      await setSession(uid, phone.trim());
 
-      // Ensure user row in public.users
+      // Check / create user row in public.users
       const { data: existing } = await supabase
         .from('users')
         .select('id, has_worker_profile, has_employer_profile')
@@ -57,7 +56,7 @@ export default function LoginScreen() {
         .maybeSingle();
 
       if (!existing) {
-        await supabase.from('users').insert({
+        const { error: insertErr } = await supabase.from('users').insert({
           id: uid,
           phone_number: phone.trim(),
           active_role: 'worker',
@@ -65,6 +64,7 @@ export default function LoginScreen() {
           has_employer_profile: false,
           language: 'en',
         });
+        if (insertErr) throw insertErr;
         router.replace('/onboarding');
       } else if (!existing.has_worker_profile && !existing.has_employer_profile) {
         router.replace('/onboarding');

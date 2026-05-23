@@ -111,9 +111,8 @@ export default function HomeScreen() {
 
   const fetchProfile = async () => {
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) return;
-      const uid = session.user.id;
+      const uid = await AsyncStorage.getItem('kaam_uid');
+      if (!uid) return;
       setSeekerId(uid);
       const { data: wp } = await supabase.from('worker_profiles').select('city, formatted_location').eq('user_id', uid).maybeSingle();
       const city = wp?.city || '';
@@ -129,16 +128,16 @@ export default function HomeScreen() {
   const loadJobs = async (cityOverride?: string) => {
     setLoading(true);
     try {
-      const { data: { session } } = await supabase.auth.getSession();
+      const uid  = await AsyncStorage.getItem('kaam_uid');
       const city = cityOverride !== undefined ? cityOverride : (await AsyncStorage.getItem('userCity') || '');
 
       // Get jobs already swiped by this user
       let swipedIds: string[] = [];
-      if (session) {
+      if (uid) {
         const { data: swipes } = await supabase
           .from('applications')
           .select('job_id')
-          .eq('worker_id', session.user.id);
+          .eq('worker_id', uid);
         swipedIds = (swipes || []).map((s: any) => s.job_id);
       }
 
@@ -186,9 +185,8 @@ export default function HomeScreen() {
     });
     if (!job.id) return;
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) return;
-      const uid = session.user.id;
+      const uid = await AsyncStorage.getItem('kaam_uid');
+      if (!uid) return;
 
       if (action === 'LIKE') {
         // Get employer_id from job
@@ -317,7 +315,7 @@ export default function HomeScreen() {
             onPress={() => {
               if (tab === 'All') handleAllIndia();
               else if (tab === 'Near Me') setCityModal(true);
-              else { setActiveFilter('Remote'); loadJobs(undefined, ''); }
+              else { setActiveFilter('Remote'); loadJobs(undefined); }
             }}
             activeOpacity={0.75}
           >

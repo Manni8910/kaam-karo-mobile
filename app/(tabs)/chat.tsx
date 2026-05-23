@@ -3,6 +3,7 @@ import {
   View, Text, StyleSheet, TextInput, TouchableOpacity,
   FlatList, KeyboardAvoidingView, Platform, ActivityIndicator, StatusBar,
 } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { supabase } from '../../lib/supabase';
 
@@ -38,9 +39,9 @@ export default function ChatScreen() {
   useEffect(() => { init(); }, []);
 
   const init = async () => {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (session) setUserId(session.user.id);
-    if (matchId && session) await fetchMsgs();
+    const uid = await AsyncStorage.getItem('kaam_uid');
+    if (uid) setUserId(uid);
+    if (matchId && uid) await fetchMsgs();
     else setLoading(false);
   };
 
@@ -59,16 +60,16 @@ export default function ChatScreen() {
   const send = async (text: string) => {
     const txt = text.trim();
     if (!txt || !matchId) return;
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) return;
-    const temp = { id: `tmp-${Date.now()}`, content: txt, sender_id: session.user.id, created_at: new Date().toISOString() };
+    const uid = await AsyncStorage.getItem('kaam_uid');
+    if (!uid) return;
+    const temp = { id: `tmp-${Date.now()}`, content: txt, sender_id: uid, created_at: new Date().toISOString() };
     setMsgs(m => [...m, temp]);
     setInput('');
     setSending(true);
     try {
       await supabase.from('messages').insert({
         application_id: matchId,
-        sender_id: session.user.id,
+        sender_id: uid,
         content: txt,
       });
       await fetchMsgs();

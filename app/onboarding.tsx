@@ -9,6 +9,7 @@ import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as ImagePicker from 'expo-image-picker';
 import { supabase } from '../lib/supabase';
+import { getUID, getPhone } from '../lib/session';
 
 const GREEN      = '#08a63f';
 const GREEN_DARK = '#057a31';
@@ -187,15 +188,15 @@ export default function OnboardingScreen() {
   const finish = async (role: 'SEEKER' | 'EMPLOYER', extra: any) => {
     setLoading(true);
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) throw new Error('Not logged in');
-      const uid = session.user.id;
+      const uid = await getUID();
+      if (!uid) throw new Error('Not logged in');
+      const phone = (await getPhone()) || '';
 
       if (role === 'SEEKER') {
         // Update users table
         await supabase.from('users').upsert({
           id: uid,
-          phone_number: session.user.phone?.replace('+91', '') ?? uid,
+          phone_number: phone,
           active_role: 'worker',
           has_worker_profile: true,
           language: 'en',
@@ -218,7 +219,7 @@ export default function OnboardingScreen() {
         // Employer
         await supabase.from('users').upsert({
           id: uid,
-          phone_number: extra.phone?.trim() || session.user.phone?.replace('+91', '') || uid,
+          phone_number: extra.phone?.trim() || phone,
           active_role: 'employer',
           has_employer_profile: true,
           language: 'en',

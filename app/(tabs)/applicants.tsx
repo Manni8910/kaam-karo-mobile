@@ -5,6 +5,7 @@ import {
 } from 'react-native';
 import { useRouter, useLocalSearchParams, useFocusEffect } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { supabase } from '../../lib/supabase';
 
 const GREEN       = '#1E8A3C';
 const GREEN_LIGHT = '#E8F5EE';
@@ -44,9 +45,9 @@ export default function ApplicantsScreen() {
   const load = async () => {
     setLoading(true);
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) { router.replace('/login'); return; }
-      const { data: ep } = await supabase.from('employer_profiles').select('id').eq('user_id', session.user.id).maybeSingle();
+      const uid = await AsyncStorage.getItem('kaam_uid');
+      if (!uid) { router.replace('/login'); return; }
+      const { data: ep } = await supabase.from('employer_profiles').select('id').eq('user_id', uid).maybeSingle();
       if (!ep) { setApps([]); return; }
 
       let query = supabase
