@@ -7,6 +7,7 @@ import {
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter, useFocusEffect } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { supabase } from '../../lib/supabase';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const GREEN    = '#08a63f';
@@ -19,7 +20,7 @@ const BG       = '#f8fbff';
 const BORDER   = '#e2e8f0';
 const RED      = '#e5484d';
 
-const API_URL = 'https://kaam-backend-production.up.railway.app';
+
 const { width: SW } = Dimensions.get('window');
 const CARD_H = Math.round(Dimensions.get('window').height * 0.56);
 
@@ -95,27 +96,27 @@ export default function HomeScreen() {
   const rotate     = pan.x.interpolate({ inputRange: [-200, 0, 200], outputRange: ['-8deg', '0deg', '8deg'] });
 
   useFocusEffect(useCallback(() => {
-    AsyncStorage.multiGet(['userToken', 'userCity', 'profileCity', 'seekerProfileId'])
-      .then(([[, token], [, city], [, pCity], [, sid]]) => {
+    AsyncStorage.multiGet(['userCity', 'profileCity'])
+      .then(([[, city], [, pCity]]) => {
         if (pCity) setProfileCity(pCity);
         const activeCity = city || pCity || '';
         setUserCity(activeCity);
-        if (sid) setSeekerId(sid);
-        if (!hasLoaded.current && token) {
+        if (!hasLoaded.current) {
           hasLoaded.current = true;
-          loadJobs(token, activeCity);
-          fetchProfile(token);
+          loadJobs(activeCity);
+          fetchProfile();
         }
       });
   }, []));
 
-  const fetchProfile = async (token: string) => {
+  const fetchProfile = async () => {
     try {
-      const r = await fetch(`${API_URL}/api/profile`, { headers: { Authorization: `Bearer ${token}` } });
-      const d = await r.json();
-      const pid = d?.user?.seekerProfile?.id;
-      if (pid) { setSeekerId(pid); AsyncStorage.setItem('seekerProfileId', pid); }
-      const city = d?.user?.city || d?.user?.location;
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+      const uid = session.user.id;
+      setSeekerId(uid);
+      const { data: wp } = await supabase.from('worker_profiles').select('city, formatted_location').eq('user_id', uid).maybeSingle();
+      const city = wp?.city || '';
       if (city) {
         setProfileCity(city);
         AsyncStorage.setItem('profileCity', city);
@@ -125,21 +126,55 @@ export default function HomeScreen() {
     } catch {}
   };
 
-  const loadJobs = async (token?: string, cityOverride?: string) => {
+  const loadJobs = async (cityOverride?: string) => {
     setLoading(true);
     try {
-      const t    = token || await AsyncStorage.getItem('userToken') || '';
+      const { data: { session } } = await supabase.auth.getSession();
       const city = cityOverride !== undefined ? cityOverride : (await AsyncStorage.getItem('userCity') || '');
-      const params = new URLSearchParams({ radius: 'all' });
-      if (city) params.set('city', city);
-      const res  = await fetch(`${API_URL}/api/jobs/deck?${params}`, { headers: { Authorization: `Bearer ${t}` } });
-      const data = await res.json();
-      const list = data.jobs?.length ? data.jobs : DEMO_JOBS;
+
+      // Get jobs already swiped by this user
+      let swipedIds: string[] = [];
+      if (session) {
+        const { data: swipes } = await supabase
+          .from('applications')
+          .select('job_id')
+          .eq('worker_id', session.user.id);
+        swipedIds = (swipes || []).map((s: any) => s.job_id);
+      }
+
+      let query = supabase
+        .from('jobs')
+        .select('*, employer_profiles:employer_id(id, business_name, city, trust_badge)')
+        .eq('status', 'active')
+        .limit(30);
+
+      if (city) query = query.ilike('city', `%${city}%`);
+      if (swipedIds.length > 0) query = query.not('id', 'in', `(${swipedIds.join(',')})`);
+
+      const { data: jobRows } = await query;
+      const list = jobRows?.length ? jobRows.map(normalizeJob) : DEMO_JOBS;
       setJobs(list); setIdx(0);
     } catch {
       setJobs(DEMO_JOBS); setIdx(0);
     } finally { setLoading(false); }
   };
+
+  function normalizeJob(row: any) {
+    const emp = row.employer_profiles || {};
+    return {
+      id: row.id,
+      title: row.title,
+      employer: { companyName: emp.business_name || 'Employer', logoUrl: emp.logo_url },
+      salaryMin: row.salary,
+      jobType: row.salary_type === 'day' ? 'CONTRACT' : 'FULL_TIME',
+      locationName: row.formatted_location || row.city || '',
+      isRemote: row.is_remote,
+      description: row.description || '',
+      hookText: row.boosted ? '⚡ Featured' : '',
+      isFastHire: !!row.boosted,
+      color: undefined,
+    };
+  }
 
   const swipe = async (dir: 'right' | 'left') => {
     const job = jobs[idx];
@@ -149,16 +184,30 @@ export default function HomeScreen() {
       pan.setValue({ x: 0, y: 0 });
       setIdx(i => i + 1);
     });
-    const sid = seekerId || await AsyncStorage.getItem('seekerProfileId');
-    if (!sid || !job.id) return;
+    if (!job.id) return;
     try {
-      const res = await fetch(`${API_URL}/api/swipes`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ seekerId: sid, jobId: job.id, action }),
-      });
-      const d = await res.json();
-      if (d.match && action === 'LIKE') setTimeout(() => showMatch(d.match), 350);
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+      const uid = session.user.id;
+
+      if (action === 'LIKE') {
+        // Get employer_id from job
+        const { data: jobRow } = await supabase.from('jobs').select('employer_id').eq('id', job.id).maybeSingle();
+        const { data: appRow, error } = await supabase.from('applications').upsert({
+          worker_id: uid,
+          job_id: job.id,
+          employer_id: jobRow?.employer_id,
+          status: 'applied',
+        }, { onConflict: 'worker_id,job_id' }).select('id, status').single();
+        if (!error && appRow?.status === 'matched') setTimeout(() => showMatch({ id: appRow.id, job }), 350);
+      } else {
+        // Record skip (ignore errors)
+        await supabase.from('applications').upsert({
+          worker_id: uid,
+          job_id: job.id,
+          status: 'skipped',
+        }, { onConflict: 'worker_id,job_id' });
+      }
     } catch {}
   };
 
@@ -183,7 +232,7 @@ export default function HomeScreen() {
     await AsyncStorage.setItem('userCity', city);
     setCityModal(false); setCitySearch('');
     setActiveFilter('Near Me');
-    loadJobs(undefined, city);
+    loadJobs(city);
   };
 
   const handleAllIndia = async () => {
@@ -191,7 +240,7 @@ export default function HomeScreen() {
     await AsyncStorage.setItem('userCity', '');
     setCityModal(false); setCitySearch('');
     setActiveFilter('All');
-    loadJobs(undefined, '');
+    loadJobs('');
   };
 
   const filteredCities = INDIAN_CITIES.filter(c =>

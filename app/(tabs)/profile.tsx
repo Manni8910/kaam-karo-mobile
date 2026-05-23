@@ -6,6 +6,7 @@ import {
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter, useFocusEffect } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { supabase } from '../../lib/supabase';
 import * as ImagePicker from 'expo-image-picker';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -20,7 +21,7 @@ const BORDER      = '#e2e8f0';
 const BG          = '#f8fbff';
 const RED         = '#e5484d';
 
-const API_URL = 'https://kaam-backend-production.up.railway.app';
+
 
 function parseSkills(raw: any): string[] {
   if (!raw) return [];
@@ -50,34 +51,28 @@ export default function ProfileScreen() {
   const loadProfile = async () => {
     setLoading(true);
     try {
-      const token = await AsyncStorage.getItem('userToken');
-      const type  = await AsyncStorage.getItem('userType') || 'SEEKER';
-      const pic   = await AsyncStorage.getItem('profilePic');
-      setUserType(type);
-      if (pic) setProfilePic(pic);
-      if (!token) { router.replace('/login'); return; }
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) { router.replace('/login'); return; }
+      const uid = session.user.id;
 
-      const res  = await fetch(`${API_URL}/api/profile`, { headers: { Authorization: `Bearer ${token}` } });
-      const data = await res.json();
+      const { data: user } = await supabase.from('users').select('phone_number, active_role').eq('id', uid).maybeSingle();
+      const role = user?.active_role || 'worker';
+      const type = role === 'employer' ? 'EMPLOYER' : 'SEEKER';
+      setUserType(type);
+      setPhone(user?.phone_number || '');
 
       if (type === 'EMPLOYER') {
-        const ep = data.user?.employerProfile;
-        setBizName(ep?.companyName || data.user?.name || '');
-        setPhone(data.user?.phone || '');
-        setLocation(ep?.locationName || '');
-        const ep_photo = ep?.logoUrl || ep?.photoUrl || data.user?.photoUrl;
-        if (ep_photo) { setProfilePic(ep_photo); AsyncStorage.setItem('profilePic', ep_photo); }
+        const { data: ep } = await supabase.from('employer_profiles').select('business_name, city').eq('user_id', uid).maybeSingle();
+        setBizName(ep?.business_name || '');
+        setLocation(ep?.city || '');
       } else {
-        const sp = data.user?.seekerProfile;
-        setName([sp?.firstName, sp?.lastName].filter(Boolean).join(' ') || data.user?.name || '');
-        setPhone(data.user?.phone || '');
-        setLocation(sp?.locationName || '');
-        setBio(sp?.bio || '');
-        const ids = parseSkills(sp?.skills);
+        const { data: wp } = await supabase.from('worker_profiles').select('full_name, city, skills, photo_url').eq('user_id', uid).maybeSingle();
+        setName(wp?.full_name || '');
+        setLocation(wp?.city || '');
+        const ids = parseSkills(wp?.skills);
         if (ids.length) setWorkTypes(ids);
-        setAvail(sp?.availability || '');
-        const sp_photo = sp?.photoUrl || sp?.profilePic || sp?.avatarUrl || data.user?.photoUrl;
-        if (sp_photo) { setProfilePic(sp_photo); AsyncStorage.setItem('profilePic', sp_photo); }
+        const sp_photo = wp?.photo_url;
+        if (sp_photo) { setProfilePic(sp_photo); }
 
         // Compute strength
         const checks = [
@@ -116,11 +111,8 @@ export default function ProfileScreen() {
       {
         text: 'Logout', style: 'destructive',
         onPress: async () => {
-          await AsyncStorage.multiRemove([
-            'userToken', 'userId', 'userType', 'seekerProfileId',
-            'onboardingComplete', 'hasSeenWelcome', 'userCity', 'profileCity',
-            'profilePic', 'hasSeenSwipeGuide',
-          ]);
+          await supabase.auth.signOut();
+          await AsyncStorage.multiRemove(['userCity', 'profileCity', 'profilePic', 'hasSeenSwipeGuide']);
           router.replace('/welcome');
         },
       },

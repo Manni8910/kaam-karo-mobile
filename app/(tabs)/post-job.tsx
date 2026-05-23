@@ -5,6 +5,7 @@ import {
 } from 'react-native';
 import { useRouter, useFocusEffect } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { supabase } from '../../lib/supabase';
 
 const GREEN       = '#1E8A3C';
 const GREEN_LIGHT = '#E8F5EE';
@@ -16,7 +17,7 @@ const TEXT_LIGHT  = '#9CA3AF';
 const BORDER      = '#E5E7EB';
 const BG_GRAY     = '#F9FAFB';
 
-const API_URL = 'https://kaam-backend-production.up.railway.app';
+
 
 const JOB_TYPES = [
   { id: 'FULL_TIME', label: 'Full-time' },
@@ -43,20 +44,24 @@ export default function PostJobScreen() {
   useFocusEffect(useCallback(() => { init(); }, []));
 
   const init = async () => {
-    const token = await AsyncStorage.getItem('userToken');
-    const type  = await AsyncStorage.getItem('userType') || '';
-    setUserType(type);
-    if (!token) { router.replace('/login'); return; }
-    if (type === 'EMPLOYER') await loadDash(token);
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) { router.replace('/login'); return; }
+    const uid = session.user.id;
+    const { data: user } = await supabase.from('users').select('active_role').eq('id', uid).maybeSingle();
+    const role = user?.active_role || 'worker';
+    setUserType(role === 'employer' ? 'EMPLOYER' : 'SEEKER');
+    if (role === 'employer') await loadDash(uid);
     else setLoading(false);
   };
 
-  const loadDash = async (token: string) => {
+  const loadDash = async (uid: string) => {
     setLoading(true);
     try {
-      const res = await fetch(`${API_URL}/api/employer/dashboard`, { headers: { Authorization: `Bearer ${token}` } });
-      const d = await res.json();
-      setDashData(d);
+      const { data: ep } = await supabase.from('employer_profiles').select('id, business_name').eq('user_id', uid).maybeSingle();
+      if (ep) {
+        const { data: jobRows } = await supabase.from('jobs').select('id, title, salary, salary_type, city, status, created_at').eq('employer_id', ep.id).order('created_at', { ascending: false });
+        setDashData({ employer: ep, jobs: jobRows || [] });
+      }
     } catch { setDashData(null); }
     finally { setLoading(false); }
   };
@@ -68,18 +73,27 @@ export default function PostJobScreen() {
     }
     setPosting(true);
     try {
-      const token = await AsyncStorage.getItem('userToken');
-      const res = await fetch(`${API_URL}/api/jobs`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ title: title.trim(), salaryMin: parseInt(salary), jobType, locationName: location.trim(), description: desc.trim() }),
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error('Not logged in');
+      const { data: ep } = await supabase.from('employer_profiles').select('id').eq('user_id', session.user.id).maybeSingle();
+      if (!ep) throw new Error('Employer profile not found');
+      const salaryType = jobType === 'CONTRACT' ? 'day' : 'month';
+      const { error } = await supabase.from('jobs').insert({
+        employer_id: ep.id,
+        title: title.trim(),
+        salary: parseInt(salary),
+        salary_type: salaryType,
+        city: location.trim(),
+        formatted_location: `${location.trim()}, India`,
+        description: desc.trim(),
+        is_remote: jobType === 'REMOTE',
+        status: 'active',
       });
-      const d = await res.json();
-      if (d.error) { Alert.alert('Error', d.error); return; }
+      if (error) throw new Error(error.message);
       Alert.alert('✅ Job Posted!', 'Your job is now live and visible to workers.', [
         { text: 'OK', onPress: () => { setView('dashboard'); setTitle(''); setSalary(''); setLoc(''); setDesc(''); init(); } }
       ]);
-    } catch { Alert.alert('Error', 'Could not post job. Try again.'); }
+    } catch (e: any) { Alert.alert('Error', e?.message || 'Could not post job. Try again.'); }
     finally { setPosting(false); }
   };
 

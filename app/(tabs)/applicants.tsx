@@ -21,7 +21,7 @@ const ORANGE_LIGHT= '#FFF7ED';
 const RED         = '#EF4444';
 const RED_LIGHT   = '#FEF2F2';
 
-const API_URL = 'https://kaam-backend-production.up.railway.app';
+
 
 const STATUS_MAP: Record<string, { bg: string; text: string; label: string }> = {
   PENDING:     { bg: ORANGE_LIGHT, text: ORANGE,  label: '⏳ Pending' },
@@ -44,14 +44,30 @@ export default function ApplicantsScreen() {
   const load = async () => {
     setLoading(true);
     try {
-      const token = await AsyncStorage.getItem('userToken');
-      if (!token) { router.replace('/login'); return; }
-      const url = jobId
-        ? `${API_URL}/api/employer/applications?jobId=${jobId}`
-        : `${API_URL}/api/employer/applications`;
-      const res  = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
-      const data = await res.json();
-      setApps(data.applications || []);
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) { router.replace('/login'); return; }
+      const { data: ep } = await supabase.from('employer_profiles').select('id').eq('user_id', session.user.id).maybeSingle();
+      if (!ep) { setApps([]); return; }
+
+      let query = supabase
+        .from('applications')
+        .select('*, jobs:job_id(id, title, salary, salary_type, city), worker_profiles:worker_id(full_name, city, skills, photo_url)')
+        .eq('employer_id', ep.id)
+        .neq('status', 'skipped')
+        .order('created_at', { ascending: false });
+      if (jobId) query = query.eq('job_id', jobId);
+
+      const { data: rows } = await query;
+      setApps((rows || []).map((r: any) => ({
+        id: r.id,
+        status: r.status,
+        job: { id: r.jobs?.id, title: r.jobs?.title, salaryMin: r.jobs?.salary, locationName: r.jobs?.city },
+        worker: {
+          name: r.worker_profiles?.full_name || 'Applicant',
+          location: r.worker_profiles?.city || '',
+          skills: r.worker_profiles?.skills || [],
+        },
+      })));
     } catch { setApps([]); }
     finally { setLoading(false); }
   };
@@ -59,14 +75,8 @@ export default function ApplicantsScreen() {
   const updateStatus = async (appId: string, status: string) => {
     setUpdating(appId);
     try {
-      const token = await AsyncStorage.getItem('userToken');
-      const res   = await fetch(`${API_URL}/api/applications/${appId}/status`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ status }),
-      });
-      const data = await res.json();
-      if (data.error) { Alert.alert('Error', data.error); return; }
+      const { error } = await supabase.from('applications').update({ status }).eq('id', appId);
+      if (error) { Alert.alert('Error', error.message); return; }
       setApps(prev => prev.map(a => a.id === appId ? { ...a, status } : a));
     } catch { Alert.alert('Error', 'Could not update. Try again.'); }
     finally { setUpdating(null); }

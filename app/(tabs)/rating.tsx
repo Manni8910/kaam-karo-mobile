@@ -5,6 +5,7 @@ import {
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { supabase } from '../../lib/supabase';
 
 const GREEN       = '#1E8A3C';
 const GREEN_LIGHT = '#E8F5EE';
@@ -15,7 +16,7 @@ const BORDER      = '#E5E7EB';
 const BG_GRAY     = '#F9FAFB';
 const ORANGE      = '#F59E0B';
 
-const API_URL = 'https://kaam-backend-production.up.railway.app';
+
 
 const STAR_LABELS = ['', 'Poor', 'Fair', 'Good', 'Great', 'Excellent!'];
 
@@ -37,14 +38,15 @@ export default function RatingScreen() {
     if (stars === 0) { Alert.alert('', 'Please select a star rating'); return; }
     setSubmit(true);
     try {
-      const token = await AsyncStorage.getItem('userToken');
-      const res   = await fetch(`${API_URL}/api/ratings`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ matchId, rating: stars, review: review.trim() }),
-      });
-      const data = await res.json();
-      if (data.error) { Alert.alert('Error', data.error); return; }
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error('Not logged in');
+      const { error } = await supabase.from('ratings').upsert({
+        application_id: matchId,
+        rater_id: session.user.id,
+        rating: stars,
+        review: review.trim(),
+      }, { onConflict: 'application_id,rater_id' });
+      if (error) { Alert.alert('Error', error.message); return; }
       setDone(true);
     } catch { Alert.alert('Error', 'Could not submit. Try again.'); }
     finally { setSubmit(false); }

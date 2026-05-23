@@ -8,6 +8,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as ImagePicker from 'expo-image-picker';
+import { supabase } from '../lib/supabase';
 
 const GREEN      = '#08a63f';
 const GREEN_DARK = '#057a31';
@@ -19,7 +20,7 @@ const MUTED      = '#667085';
 const BORDER     = '#e2e8f0';
 const BG         = '#f8fbff';
 
-const API_URL = 'https://kaam-backend-production.up.railway.app';
+
 
 type Step =
   | 'role'
@@ -186,22 +187,56 @@ export default function OnboardingScreen() {
   const finish = async (role: 'SEEKER' | 'EMPLOYER', extra: any) => {
     setLoading(true);
     try {
-      const token = await AsyncStorage.getItem('userToken');
-      await fetch(`${API_URL}/api/users/onboard`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ userType: role, ...extra }),
-      }).catch(() => {});
-      await AsyncStorage.setItem('onboardingComplete', 'true');
-      await AsyncStorage.setItem('userType', role);
-      if (extra?.location) {
-        await AsyncStorage.setItem('profileCity', extra.location);
-        await AsyncStorage.setItem('userCity', extra.location);
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error('Not logged in');
+      const uid = session.user.id;
+
+      if (role === 'SEEKER') {
+        // Update users table
+        await supabase.from('users').upsert({
+          id: uid,
+          phone_number: session.user.phone?.replace('+91', '') ?? uid,
+          active_role: 'worker',
+          has_worker_profile: true,
+          language: 'en',
+        }, { onConflict: 'id' });
+
+        // Upsert worker profile
+        await supabase.from('worker_profiles').upsert({
+          user_id: uid,
+          full_name: extra.fullName || '',
+          city: extra.location || '',
+          formatted_location: extra.location ? `${extra.location}, India` : '',
+          skills: extra.skills || [],
+          category: extra.workTypes?.[0] || 'all',
+          experience_years: parseInt(extra.experience) || 0,
+          availability: extra.availability || {},
+          is_open_to_work: true,
+        }, { onConflict: 'user_id' });
+
+      } else {
+        // Employer
+        await supabase.from('users').upsert({
+          id: uid,
+          phone_number: extra.phone?.trim() || session.user.phone?.replace('+91', '') || uid,
+          active_role: 'employer',
+          has_employer_profile: true,
+          language: 'en',
+        }, { onConflict: 'id' });
+
+        await supabase.from('employer_profiles').upsert({
+          user_id: uid,
+          business_name: extra.businessName || '',
+          contact_person_name: extra.contactName || '',
+          business_type: extra.businessType || 'Other',
+          city: '',
+          verification_status: 'pending',
+        }, { onConflict: 'user_id' });
       }
-      if (extra?.profilePic) await AsyncStorage.setItem('profilePic', extra.profilePic);
+
       router.replace('/(tabs)');
-    } catch {
-      await AsyncStorage.setItem('onboardingComplete', 'true');
+    } catch (e: any) {
+      console.error('Onboarding error:', e?.message);
       router.replace('/(tabs)');
     } finally { setLoading(false); }
   };
